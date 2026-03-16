@@ -1,0 +1,33 @@
+services:
+
+  nginx:
+    container_name: bookshop_nginx
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      # Bind-mount gives nginx access to public/ static assets during development.
+      # Use :ro — nginx should never write to the source tree.
+      - .:/var/www:ro
+
+  php:
+    environment:
+      APP_ENV:   local
+      APP_DEBUG: "true"
+    volumes:
+      # Full source bind-mount for hot-reload during development.
+      # :delegated is a macOS Docker Desktop performance hint (no-op on Linux).
+      - .:/var/www:delegated
+      # Config files are NOT baked into the image; mount them explicitly.
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+      - ./docker/php/www.conf:/usr/local/etc/php-fpm.d/www.conf:ro
+
+  db:
+    ports:
+      # Expose MySQL to the host so developers can connect via local DB clients.
+      - "${MYSQL_EXPOSE_PORT:-3307}:3306"
+
+  redis:
+    ports:
+      # Expose Redis to the host for debugging with redis-cli or GUI tools.
+      - "6379:6379"

@@ -1,0 +1,38 @@
+services:
+
+  nginx:
+    container_name: bookshop_nginx
+    # In production, nginx is built from the nginx-static Dockerfile stage.
+    # The public/ directory is baked into the image — no bind-mount needed.
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: nginx-static
+    ports:
+      - "8080:80"
+      - "8443:443"
+    restart: unless-stopped
+
+  php:
+    environment:
+      APP_ENV:   production
+      APP_DEBUG: "false"
+    volumes:
+      # storage/ and bootstrap/cache/ must be writable at runtime.
+      # Named volumes survive container rebuilds and persist across deploys.
+      - app_storage:/var/www/storage
+      - app_bootstrap_cache:/var/www/bootstrap/cache
+      # Production FPM pool: higher limits, worker recycling.
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+      - ./docker/php/www.prod.conf:/usr/local/etc/php-fpm.d/www.conf:ro
+    restart: unless-stopped
+
+  db:
+    restart: unless-stopped
+
+  redis:
+    restart: unless-stopped
+
+volumes:
+  app_storage:
+  app_bootstrap_cache:

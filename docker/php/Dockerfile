@@ -4,6 +4,11 @@
 # ─────────────────────────────────────────────────────────────────────────────
 FROM php:8.4-fpm AS base
 
+ARG HOST_UID=1000
+ARG HOST_GID=1000
+RUN usermod -u ${HOST_UID} www-data \
+    && groupmod -g ${HOST_GID} www-data
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
         unzip \

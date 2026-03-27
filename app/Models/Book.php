@@ -7,6 +7,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property BookStatus $status
+ * @property bool $is_featured
+ * @property int $price
+ */
 class Book extends Model
 {
     use HasFactory;

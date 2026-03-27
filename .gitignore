@@ -35,3 +35,6 @@ docker-compose.override.yml
 
 # Claude Code agent memory (internal tooling, not project files)
 .claude/agent-memory/
+
+# Playwright MCP screenshots
+.playwright-mcp/

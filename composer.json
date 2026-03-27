@@ -7,6 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.4",
+        "ext-pdo": "*",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1"
     },
@@ -18,7 +19,9 @@
         "laravel/sail": "^1.41",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
-        "phpunit/phpunit": "^11.5.50"
+        "phpunit/phpunit": "^11.5.50",
+        "nunomaduro/larastan": "^3.0",
+        "ekino/phpstan-banned-code": "^3.0"
     },
     "autoload": {
         "psr-4": {
@@ -48,6 +51,15 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@php artisan test"
+        ],
+        "cs-fix": [
+            "./vendor/bin/pint --format agent"
+        ],
+        "cs-check": [
+            "./vendor/bin/pint --test --format agent"
+        ],
+        "analyse": [
+            "./vendor/bin/phpstan analyse --memory-limit=512M"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

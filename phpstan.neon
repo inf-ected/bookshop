@@ -1,0 +1,44 @@
+includes:
+    - vendor/nunomaduro/larastan/extension.neon
+    - vendor/ekino/phpstan-banned-code/extension.neon
+
+parameters:
+    level: 5
+    paths:
+        - app
+        - bootstrap
+        - config
+        - database
+        - routes
+
+    # Larastan
+    checkModelProperties: true
+
+    # Banned code overrides (allow var_dump in local env via baseline if needed)
+    banned_code:
+        nodes:
+            - type: Expr_FuncCall
+              functions:
+                  - dd
+                  - dump
+                  - var_dump
+                  - print_r
+                  - debug_backtrace
+                  - exec
+                  - passthru
+                  - shell_exec
+                  - system
+                  - proc_open
+                  - phpinfo
+            - type: Expr_Eval
+              functions: null
+            - type: Expr_Exit
+              functions: null
+            - type: Expr_Print
+              functions: null
+            - type: Expr_ShellExec
+              functions: null
+            - type: Stmt_Echo
+              functions: null
+        use_from_tests: true
+        non_ignorable: false

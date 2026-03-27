@@ -21,6 +21,8 @@ class UserFactory extends Factory
      * Define the model's default state.
      *
      * @return array<string, mixed>
+     *
+     * @phpstan-ignore method.childReturnType
      */
     public function definition(): array
     {

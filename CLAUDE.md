@@ -4,19 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-A Laravel 12 bookshop application running on PHP 8.3-fpm with Docker (nginx + MySQL 8 + Redis).
+A Laravel 12 bookshop application running on PHP 8.4-fpm with Docker (nginx + MySQL 8 + Redis + MinIO).
 
 ## Development Commands
 
 ### Docker (primary workflow)
 ```bash
-docker compose up -d          # Start all services
-docker compose down           # Stop services
-docker compose exec php bash  # Shell into PHP container
-docker compose exec php php artisan <command>
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d   # Start all services
+docker compose down                                                      # Stop services
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec php bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec php php artisan <command>
 ```
 
+> **Note:** `docker-compose.dev.yml` must always be passed explicitly — it is not named `override` so it is not auto-loaded.
+
 App is served at http://localhost:8080 (HTTP) and https://localhost:8443 (HTTPS).
+MinIO S3 API: http://localhost:9000 — MinIO console: http://localhost:9001
 
 ### Without Docker
 ```bash
@@ -33,12 +36,21 @@ php artisan test tests/Unit/ExampleTest.php  # Run a specific file
 ./vendor/bin/pint                         # Run Laravel Pint (code style fixer)
 ```
 
+### Composer scripts
+```bash
+composer cs-fix    # Fix code style with Pint
+composer cs-check  # Check code style (no changes)
+composer analyse   # Run PHPStan static analysis
+```
+
 ## Architecture
 
 - **PHP container**: `docker/php/Dockerfile` — multi-stage build (base → builder → app). Builder runs `composer install --no-dev`.
 - **Nginx**: serves on 8080/8443, proxies to `bookshop_php` container. Config at `docker/nginx/default.conf`.
-- **Database**: MySQL 8 with credentials from `.env` (`MYSQL_DATABASE`, `MYSQL_ROOT_PASSWORD`, `MYSQL_EXPOSE_PORT`, `MYSQL_PORT`).
+- **Database**: MySQL 8 with credentials from `.env` (`MYSQL_DATABASE`, `MYSQL_ROOT_PASSWORD`, `MYSQL_EXPOSE_PORT`).
 - **Redis**: used for cache/session/queue.
+- **MinIO**: S3-compatible local storage. Two buckets: `bookshop-public` (covers) and `bookshop-private` (epubs). Disks: `s3-public`, `s3-private` in `config/filesystems.php`.
+- **Static analysis**: `composer analyse` (PHPStan level 5 via `phpstan.neon`, includes Larastan + banned-code extension).
 
 ## Testing
 

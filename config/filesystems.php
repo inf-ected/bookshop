@@ -60,6 +60,36 @@ return [
             'report' => false,
         ],
 
+        // Public bucket — book cover images (publicly readable via MinIO/S3).
+        's3-public' => [
+            'driver' => 's3',
+            'key' => env('S3_PUBLIC_ACCESS_KEY_ID'),
+            'secret' => env('S3_PUBLIC_SECRET_ACCESS_KEY'),
+            'region' => env('S3_PUBLIC_REGION', 'us-east-1'),
+            'bucket' => env('S3_PUBLIC_BUCKET', 'bookshop-public'),
+            'url' => env('S3_PUBLIC_URL'),
+            'endpoint' => env('S3_ENDPOINT'),
+            'use_path_style_endpoint' => env('S3_USE_PATH_STYLE_ENDPOINT', true),
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
+        // Private bucket — epub files (access via pre-signed URLs only).
+        's3-private' => [
+            'driver' => 's3',
+            'key' => env('S3_PRIVATE_ACCESS_KEY_ID'),
+            'secret' => env('S3_PRIVATE_SECRET_ACCESS_KEY'),
+            'region' => env('S3_PRIVATE_REGION', 'us-east-1'),
+            'bucket' => env('S3_PRIVATE_BUCKET', 'bookshop-private'),
+            'url' => env('S3_PRIVATE_URL'),
+            'endpoint' => env('S3_ENDPOINT'),
+            'use_path_style_endpoint' => env('S3_USE_PATH_STYLE_ENDPOINT', true),
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*

@@ -35,3 +35,10 @@ services:
     ports:
       # Expose Redis to the host for debugging with redis-cli or GUI tools.
       - "6379:6379"
+
+  minio:
+    ports:
+      # S3-compatible API used by the application.
+      - "9000:9000"
+      # MinIO web console for bucket management during development.
+      - "9001:9001"

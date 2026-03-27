@@ -32,3 +32,6 @@ Thumbs.db
 /docker/mysql/*
 !/docker/mysql/init.sql
 docker-compose.override.yml
+
+# Claude Code agent memory (internal tooling, not project files)
+.claude/agent-memory/

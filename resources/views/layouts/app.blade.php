@@ -11,7 +11,17 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body>
-    @yield('content')
+<body class="min-h-screen flex flex-col bg-surface text-text-primary font-sans">
+
+    <div class="relative">
+        @include('partials.header')
+    </div>
+
+    <main class="flex-1">
+        @yield('content')
+    </main>
+
+    @include('partials.footer')
+
 </body>
 </html>

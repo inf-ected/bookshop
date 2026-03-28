@@ -18,4 +18,9 @@ class ExampleTest extends TestCase
 
         $response->assertStatus(200);
     }
+
+    public function test_ci_block_check(): void
+    {
+        $this->assertTrue(false, 'Deliberate CI failure to test branch protection.');
+    }
 }

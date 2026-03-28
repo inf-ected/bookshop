@@ -119,6 +119,12 @@
                 this.currentPageText = this.pages[0] || '';
             },
 
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.appendChild(document.createTextNode(text));
+                return div.innerHTML;
+            },
+
             splitIntoPages(text, size) {
                 if (!text) return [''];
                 const pages = [];
@@ -138,7 +144,7 @@
                             }
                         }
                     }
-                    const chunk = text.slice(i, end).trim();
+                    const chunk = this.escapeHtml(text.slice(i, end).trim());
                     // Convert newlines to <br> tags for display
                     pages.push(chunk.replace(/\n\n+/g, '</p><p class="mt-4">').replace(/\n/g, '<br>'));
                     i = end;

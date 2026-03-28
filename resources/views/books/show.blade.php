@@ -15,9 +15,9 @@
 
         {{-- Cover --}}
         <div class="shrink-0 w-full md:w-64">
-            @if($book->cover_path)
+            @if($book->cover_url)
                 <img
-                    src="{{ asset('storage/' . $book->cover_path) }}"
+                    src="{{ $book->cover_url }}"
                     alt="{{ $book->title }}"
                     class="w-full md:w-64 rounded-lg shadow-md object-cover"
                 >

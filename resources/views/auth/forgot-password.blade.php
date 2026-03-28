@@ -1,77 +1,25 @@
-@extends('layouts.app')
-
-@section('content')
-
-<div class="min-h-[calc(100vh-8rem)] flex items-center justify-center px-4 py-12">
-    <div class="w-full max-w-md">
-
-        <div class="text-center mb-8">
-            <h1 class="font-serif text-3xl text-text-primary mb-2">Восстановление пароля</h1>
-            <p class="text-sm text-text-muted">
-                Укажите email вашего аккаунта — мы пришлём ссылку для сброса пароля.
-            </p>
-        </div>
-
-        <div class="bg-white border border-border-subtle rounded-xl shadow-sm p-8">
-
-            {{-- Success status --}}
-            @if (session('status'))
-                <div class="mb-6 px-4 py-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
-                    {{ session('status') }}
-                </div>
-            @endif
-
-            {{-- General error --}}
-            @if (session('error'))
-                <div class="mb-6 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-                    {{ session('error') }}
-                </div>
-            @endif
-
-            <form method="POST" action="{{ route('password.email') }}" class="space-y-5">
-                @csrf
-
-                {{-- Email --}}
-                <div>
-                    <label for="email" class="block text-sm font-sans font-medium text-text-primary mb-1.5">
-                        Email
-                    </label>
-                    <input
-                        id="email"
-                        type="email"
-                        name="email"
-                        value="{{ old('email') }}"
-                        required
-                        autofocus
-                        autocomplete="username"
-                        class="w-full px-3.5 py-2.5 rounded-lg border text-sm font-sans text-text-primary bg-white placeholder:text-text-subtle transition
-                            focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('email') border-red-400 bg-red-50 @else border-border-subtle @enderror"
-                        placeholder="you@example.com"
-                    >
-                    @error('email')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                {{-- Submit --}}
-                <button
-                    type="submit"
-                    class="w-full px-4 py-2.5 bg-brand-700 hover:bg-brand-900 text-white font-sans text-sm font-medium rounded-lg transition focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
-                >
-                    Отправить ссылку
-                </button>
-
-            </form>
-
-            <div class="mt-6 text-center">
-                <a href="{{ route('login') }}" class="text-sm text-brand-700 hover:text-brand-900 transition">
-                    &larr; Вернуться к входу
-                </a>
-            </div>
-
-        </div>
+<x-guest-layout>
+    <div class="mb-4 text-sm text-gray-600">
+        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
     </div>
-</div>
 
-@endsection
+    <!-- Session Status -->
+    <x-auth-session-status class="mb-4" :status="session('status')" />
+
+    <form method="POST" action="{{ route('password.email') }}">
+        @csrf
+
+        <!-- Email Address -->
+        <div>
+            <x-input-label for="email" :value="__('Email')" />
+            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
+            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+        </div>
+
+        <div class="flex items-center justify-end mt-4">
+            <x-primary-button>
+                {{ __('Email Password Reset Link') }}
+            </x-primary-button>
+        </div>
+    </form>
+</x-guest-layout>

@@ -17,7 +17,7 @@ class OAuthProviderFactory extends Factory
     protected $model = OAuthProviderModel::class;
 
     /**
-     * @return array<string, mixed>
+     * @return array<model-property<OAuthProviderModel>, mixed>
      */
     public function definition(): array
     {

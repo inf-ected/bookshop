@@ -9,12 +9,17 @@
         {{-- Desktop nav --}}
         <nav class="hidden md:flex items-center gap-6 text-sm font-sans">
             <a href="{{ route('books.index') }}" class="hover:text-brand-200 transition">Книги</a>
-            {{-- TODO Phase 3: convert to named routes when auth routes are implemented --}}
             @auth
-                <a href="/cabinet" class="hover:text-brand-200 transition">Личный кабинет</a>
+                <a href="{{ route('cabinet.index') }}" class="hover:text-brand-200 transition">Личный кабинет</a>
+                <form method="POST" action="{{ route('logout') }}" class="inline">
+                    @csrf
+                    <button type="submit" class="hover:text-brand-200 transition">
+                        Выйти
+                    </button>
+                </form>
             @else
-                <a href="/login" class="hover:text-brand-200 transition">Войти</a>
-                <a href="/register" class="px-4 py-1.5 border border-brand-300 rounded hover:bg-brand-800 transition text-sm">
+                <a href="{{ route('login') }}" class="hover:text-brand-200 transition">Войти</a>
+                <a href="{{ route('register') }}" class="px-4 py-1.5 border border-brand-300 rounded hover:bg-brand-800 transition text-sm">
                     Регистрация
                 </a>
             @endauth
@@ -52,16 +57,21 @@
                     <a href="{{ route('books.index') }}" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition">
                         Книги
                     </a>
-                    {{-- TODO Phase 3: convert to named routes when auth routes are implemented --}}
                     @auth
-                        <a href="/cabinet" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition">
+                        <a href="{{ route('cabinet.index') }}" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition">
                             Личный кабинет
                         </a>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="py-2.5 text-left hover:text-brand-200 transition w-full">
+                                Выйти
+                            </button>
+                        </form>
                     @else
-                        <a href="/login" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition">
+                        <a href="{{ route('login') }}" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition">
                             Войти
                         </a>
-                        <a href="/register" class="py-2.5 hover:text-brand-200 transition">
+                        <a href="{{ route('register') }}" class="py-2.5 hover:text-brand-200 transition">
                             Регистрация
                         </a>
                     @endauth

@@ -6,20 +6,13 @@
     <div class="w-full max-w-md">
 
         <div class="text-center mb-8">
-            <h1 class="font-serif text-3xl text-text-primary mb-2">Восстановление пароля</h1>
-            <p class="text-sm text-text-muted">
-                Укажите email вашего аккаунта — мы пришлём ссылку для сброса пароля.
+            <h1 class="font-serif text-3xl text-text-primary mb-2">Почти готово</h1>
+            <p class="text-sm text-text-muted max-w-sm mx-auto">
+                Провайдер авторизации не передал email-адрес. Укажите его, чтобы завершить регистрацию.
             </p>
         </div>
 
         <div class="bg-white border border-border-subtle rounded-xl shadow-sm p-8">
-
-            {{-- Success status --}}
-            @if (session('status'))
-                <div class="mb-6 px-4 py-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
-                    {{ session('status') }}
-                </div>
-            @endif
 
             {{-- General error --}}
             @if (session('error'))
@@ -28,7 +21,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('password.email') }}" class="space-y-5">
+            <form method="POST" action="{{ route('auth.complete-registration.store') }}" class="space-y-5">
                 @csrf
 
                 {{-- Email --}}
@@ -59,16 +52,10 @@
                     type="submit"
                     class="w-full px-4 py-2.5 bg-brand-700 hover:bg-brand-900 text-white font-sans text-sm font-medium rounded-lg transition focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
                 >
-                    Отправить ссылку
+                    Продолжить
                 </button>
 
             </form>
-
-            <div class="mt-6 text-center">
-                <a href="{{ route('login') }}" class="text-sm text-brand-700 hover:text-brand-900 transition">
-                    &larr; Вернуться к входу
-                </a>
-            </div>
 
         </div>
     </div>

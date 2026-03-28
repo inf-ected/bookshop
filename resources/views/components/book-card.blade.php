@@ -4,9 +4,9 @@
 
     {{-- Cover --}}
     <a href="{{ route('books.show', $book) }}" class="block aspect-[2/3] overflow-hidden bg-surface-muted">
-        @if($book->cover_thumb_path)
+        @if($book->cover_thumb_url)
             <img
-                src="{{ asset('storage/' . $book->cover_thumb_path) }}"
+                src="{{ $book->cover_thumb_url }}"
                 alt="{{ $book->title }}"
                 class="w-full h-full object-cover"
                 loading="lazy"

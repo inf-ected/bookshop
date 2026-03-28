@@ -51,7 +51,6 @@
                     class="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 md:mx-0 md:px-0"
                     style="scrollbar-width: none; -ms-overflow-style: none;"
                     @scroll.passive="updateActive($el)"
-                    id="carousel-track"
                 >
                     @foreach($books as $i => $book)
                         <div class="snap-start shrink-0 w-44 md:w-52" data-slide="{{ $i }}">

@@ -2,13 +2,14 @@
     <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
 
         {{-- Logo --}}
-        <a href="/" class="font-serif text-xl tracking-wide hover:text-brand-200 transition">
+        <a href="{{ route('home') }}" class="font-serif text-xl tracking-wide hover:text-brand-200 transition">
             Книжная лавка
         </a>
 
         {{-- Desktop nav --}}
         <nav class="hidden md:flex items-center gap-6 text-sm font-sans">
             <a href="{{ route('books.index') }}" class="hover:text-brand-200 transition">Книги</a>
+            {{-- TODO Phase 3: convert to named routes when auth routes are implemented --}}
             @auth
                 <a href="/cabinet" class="hover:text-brand-200 transition">Личный кабинет</a>
             @else
@@ -51,6 +52,7 @@
                     <a href="{{ route('books.index') }}" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition">
                         Книги
                     </a>
+                    {{-- TODO Phase 3: convert to named routes when auth routes are implemented --}}
                     @auth
                         <a href="/cabinet" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition">
                             Личный кабинет

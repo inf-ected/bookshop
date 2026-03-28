@@ -12,11 +12,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Laravel\Socialite\Facades\Socialite;
+use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 class OAuthController extends Controller
 {
-    public function redirect(string $provider): RedirectResponse
+    public function redirect(string $provider): Response
     {
         if (! OauthProvider::tryFrom($provider)) {
             abort(404);
@@ -32,18 +33,26 @@ class OAuthController extends Controller
         }
 
         try {
+            /** @var \Laravel\Socialite\Two\User $socialUser */
             $socialUser = Socialite::driver($provider)->user();
         } catch (Throwable) {
             return redirect()->route('login')->withErrors(['oauth' => 'Не удалось войти через внешний сервис.']);
         }
 
         $oauthRecord = OAuthProviderModel::query()
+            ->with('user')
             ->where('provider', $provider)
             ->where('provider_id', $socialUser->getId())
             ->first();
 
         if ($oauthRecord) {
-            Auth::login($oauthRecord->user);
+            $linkedUser = User::find($oauthRecord->user_id);
+
+            if (! $linkedUser) {
+                abort(500);
+            }
+
+            Auth::login($linkedUser);
 
             return redirect()->intended('/cabinet');
         }
@@ -131,7 +140,7 @@ class OAuthController extends Controller
         }
 
         $user = User::create([
-            'name' => $pending['name'] ?? $request->validated('email'),
+            'name' => $pending['name'] ?? $request->input('email'),
             'email' => $request->input('email'),
             'password' => null,
             'email_verified_at' => null,

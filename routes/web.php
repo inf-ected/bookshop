@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\BookController;
+use App\Http\Controllers\CabinetController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\OAuthController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StaticPageController;
 use Illuminate\Support\Facades\Route;
 
@@ -30,3 +33,29 @@ foreach ($staticPages as $page) {
         ->name("static.{$page}")
         ->defaults('page', $page);
 }
+
+// Profile routes (auth only)
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+// OAuth routes (guest only)
+Route::middleware('guest')->group(function () {
+    Route::get('/auth/{provider}/redirect', [OAuthController::class, 'redirect'])
+        ->name('auth.oauth.redirect');
+    Route::get('/auth/{provider}/callback', [OAuthController::class, 'callback'])
+        ->name('auth.oauth.callback');
+    Route::get('/auth/complete-registration', [OAuthController::class, 'showCompleteRegistration'])
+        ->name('auth.complete-registration');
+    Route::post('/auth/complete-registration', [OAuthController::class, 'completeRegistration'])
+        ->name('auth.complete-registration.store');
+});
+
+// User cabinet (auth + verified)
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/cabinet', [CabinetController::class, 'index'])->name('cabinet.index');
+});
+
+require __DIR__.'/auth.php';

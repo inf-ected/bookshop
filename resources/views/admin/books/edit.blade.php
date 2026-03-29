@@ -64,7 +64,7 @@
             },
             onTitleInput(event) {
                 if (!this.slugManuallyEdited) {
-                    document.getElementById('slug').value = this.slugify(event.target.value);
+                    this.$refs.slug.value = this.slugify(event.target.value);
                 }
             }
         }"
@@ -106,6 +106,7 @@
                     </label>
                     <input
                         id="slug"
+                        x-ref="slug"
                         type="text"
                         name="slug"
                         value="{{ old('slug', $book->slug) }}"
@@ -272,7 +273,7 @@
                 <div>
                     <label for="cover_thumb" class="block text-sm font-medium text-text-primary mb-1.5">
                         Миниатюра обложки
-                        <span class="text-xs font-normal text-text-subtle ml-1">(jpg, png, webp — до 5 МБ)</span>
+                        <span class="text-xs font-normal text-text-subtle ml-1">(jpg, png, webp — до 2 МБ)</span>
                     </label>
                     @if ($book->cover_thumb_url)
                         <div class="mb-3 flex items-start gap-4">

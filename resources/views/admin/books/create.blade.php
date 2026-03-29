@@ -57,7 +57,7 @@
             },
             onTitleInput(event) {
                 if (!this.slugManuallyEdited) {
-                    document.getElementById('slug').value = this.slugify(event.target.value);
+                    this.$refs.slug.value = this.slugify(event.target.value);
                 }
             }
         }"
@@ -99,6 +99,7 @@
                     </label>
                     <input
                         id="slug"
+                        x-ref="slug"
                         type="text"
                         name="slug"
                         value="{{ old('slug') }}"
@@ -137,26 +138,6 @@
                     </div>
                     <p class="mt-1 text-xs text-text-subtle">Введите сумму в рублях. Например: 499</p>
                     @error('price')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                {{-- Status --}}
-                <div>
-                    <label for="status" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Статус <span class="text-red-500">*</span>
-                    </label>
-                    <select
-                        id="status"
-                        name="status"
-                        class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface transition
-                            focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('status') border-red-400 bg-red-50 @else border-border-subtle @enderror"
-                    >
-                        <option value="draft" @selected(old('status', 'draft') === 'draft')>Черновик</option>
-                        <option value="published" @selected(old('status') === 'published')>Опубликована</option>
-                    </select>
-                    @error('status')
                         <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
@@ -257,7 +238,7 @@
                 <div>
                     <label for="cover_thumb" class="block text-sm font-medium text-text-primary mb-1.5">
                         Миниатюра обложки
-                        <span class="text-xs font-normal text-text-subtle ml-1">(jpg, png, webp — до 5 МБ)</span>
+                        <span class="text-xs font-normal text-text-subtle ml-1">(jpg, png, webp — до 2 МБ)</span>
                     </label>
                     <input
                         id="cover_thumb"

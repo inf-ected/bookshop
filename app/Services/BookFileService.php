@@ -54,27 +54,6 @@ class BookFileService
     }
 
     /**
-     * Upload epub file to the private S3 bucket synchronously.
-     * Deletes the old epub if one exists.
-     * Returns the stored path.
-     */
-    public function uploadEpub(Book $book, UploadedFile $file): string
-    {
-        if ($book->epub_path) {
-            Storage::disk('s3-private')->delete($book->epub_path);
-        }
-
-        $path = 'epubs/'.Str::uuid().'.epub';
-        $result = Storage::disk('s3-private')->put($path, $file->getContent(), 'private');
-
-        if ($result === false) {
-            throw new \RuntimeException('Failed to upload file to S3.');
-        }
-
-        return $path;
-    }
-
-    /**
      * Delete the cover files from public S3 bucket.
      */
     public function deleteCover(Book $book): void

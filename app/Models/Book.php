@@ -97,6 +97,7 @@ class Book extends Model
             return false;
         }
 
+        // TODO: refactor to Eloquent relationship once UserBook model exists (Phase 5)
         return DB::table('user_books')
             ->where('book_id', $this->id)
             ->exists();

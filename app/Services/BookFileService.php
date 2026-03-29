@@ -23,7 +23,11 @@ class BookFileService
         }
 
         $path = 'covers/'.Str::uuid().'.'.$file->getClientOriginalExtension();
-        Storage::disk('s3-public')->put($path, $file->getContent(), 'public');
+        $result = Storage::disk('s3-public')->put($path, $file->getContent(), 'public');
+
+        if ($result === false) {
+            throw new \RuntimeException('Failed to upload file to S3.');
+        }
 
         return $path;
     }
@@ -40,7 +44,11 @@ class BookFileService
         }
 
         $path = 'covers/thumbs/'.Str::uuid().'.'.$file->getClientOriginalExtension();
-        Storage::disk('s3-public')->put($path, $file->getContent(), 'public');
+        $result = Storage::disk('s3-public')->put($path, $file->getContent(), 'public');
+
+        if ($result === false) {
+            throw new \RuntimeException('Failed to upload file to S3.');
+        }
 
         return $path;
     }
@@ -57,7 +65,11 @@ class BookFileService
         }
 
         $path = 'epubs/'.Str::uuid().'.epub';
-        Storage::disk('s3-private')->put($path, $file->getContent(), 'private');
+        $result = Storage::disk('s3-private')->put($path, $file->getContent(), 'private');
+
+        if ($result === false) {
+            throw new \RuntimeException('Failed to upload file to S3.');
+        }
 
         return $path;
     }

@@ -8,9 +8,9 @@ use App\Enums\BookStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreBookRequest;
 use App\Http\Requests\Admin\UpdateBookRequest;
-use App\Jobs\ProcessBookFileUpload;
 use App\Models\Book;
 use App\Services\BookFileService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -23,7 +23,7 @@ class BookController extends Controller
 
     public function index(): View
     {
-        $books = Book::query()->ordered()->get();
+        $books = Book::query()->ordered()->paginate(15);
 
         return view('admin.books.index', compact('books'));
     }
@@ -51,19 +51,20 @@ class BookController extends Controller
         $book->save();
 
         if ($request->hasFile('cover')) {
-            $coverPath = $this->fileService->uploadCover($book, $request->file('cover'));
-            $book->cover_path = $coverPath;
-            $book->save();
+            $book->cover_path = $this->fileService->uploadCover($book, $request->file('cover'));
+        }
+
+        if ($request->hasFile('cover_thumb')) {
+            $book->cover_thumb_path = $this->fileService->uploadCoverThumb($book, $request->file('cover_thumb'));
         }
 
         if ($request->hasFile('epub')) {
-            $epubFile = $request->file('epub');
-            $tempPath = $epubFile->getRealPath();
-            $extension = $epubFile->getClientOriginalExtension();
-            ProcessBookFileUpload::dispatch($book->id, $tempPath, $extension);
+            $book->epub_path = $this->fileService->uploadEpub($book, $request->file('epub'));
         }
 
-        return redirect()->route('admin.books.index')
+        $book->save();
+
+        return redirect()->route('admin.books.edit', $book)
             ->with('success', 'Книга создана.');
     }
 
@@ -97,20 +98,20 @@ class BookController extends Controller
         $book->sort_order = (int) ($data['sort_order'] ?? 0);
 
         if ($request->hasFile('cover')) {
-            $coverPath = $this->fileService->uploadCover($book, $request->file('cover'));
-            $book->cover_path = $coverPath;
+            $book->cover_path = $this->fileService->uploadCover($book, $request->file('cover'));
+        }
+
+        if ($request->hasFile('cover_thumb')) {
+            $book->cover_thumb_path = $this->fileService->uploadCoverThumb($book, $request->file('cover_thumb'));
+        }
+
+        if ($request->hasFile('epub')) {
+            $book->epub_path = $this->fileService->uploadEpub($book, $request->file('epub'));
         }
 
         $book->save();
 
-        if ($request->hasFile('epub')) {
-            $epubFile = $request->file('epub');
-            $tempPath = $epubFile->getRealPath();
-            $extension = $epubFile->getClientOriginalExtension();
-            ProcessBookFileUpload::dispatch($book->id, $tempPath, $extension);
-        }
-
-        return redirect()->route('admin.books.index')
+        return redirect()->route('admin.books.edit', $book->fresh())
             ->with('success', 'Книга обновлена.');
     }
 
@@ -127,13 +128,15 @@ class BookController extends Controller
             ->with('success', 'Книга удалена.');
     }
 
-    public function toggleStatus(Book $book): RedirectResponse
+    public function toggleStatus(Book $book): JsonResponse
     {
         if ($book->status === BookStatus::Published) {
             // Rule 17: cannot unpublish if purchases exist
             if ($this->bookHasPurchases($book)) {
-                return redirect()->route('admin.books.index')
-                    ->withErrors(['status' => 'Нельзя снять с публикации книгу, у которой есть покупки.']);
+                return response()->json(
+                    ['error' => 'Нельзя снять с публикации книгу, у которой есть покупки.'],
+                    422
+                );
             }
             $book->status = BookStatus::Draft;
         } else {
@@ -142,15 +145,15 @@ class BookController extends Controller
 
         $book->save();
 
-        return redirect()->route('admin.books.index');
+        return response()->json(['status' => $book->status->value]);
     }
 
-    public function toggleFeatured(Book $book): RedirectResponse
+    public function toggleFeatured(Book $book): JsonResponse
     {
         $book->is_featured = ! $book->is_featured;
         $book->save();
 
-        return redirect()->route('admin.books.index');
+        return response()->json(['is_featured' => $book->is_featured]);
     }
 
     /**

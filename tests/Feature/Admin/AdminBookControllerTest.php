@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature\Admin;
 
 use App\Enums\BookStatus;
-use App\Jobs\ProcessBookFileUpload;
 use App\Models\Book;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -58,7 +56,6 @@ class AdminBookControllerTest extends TestCase
 
     public function test_admin_can_create_a_book(): void
     {
-        Queue::fake();
         Storage::fake('s3-public');
 
         $admin = User::factory()->admin()->create();
@@ -75,7 +72,9 @@ class AdminBookControllerTest extends TestCase
             'sort_order' => 0,
         ]);
 
-        $response->assertRedirect('/admin/books');
+        $book = Book::query()->where('slug', 'test-book')->firstOrFail();
+
+        $response->assertRedirect(route('admin.books.edit', $book));
         $this->assertDatabaseHas('books', [
             'slug' => 'test-book',
             'price' => 59000,
@@ -85,8 +84,6 @@ class AdminBookControllerTest extends TestCase
 
     public function test_new_book_is_always_created_with_draft_status(): void
     {
-        Queue::fake();
-
         $admin = User::factory()->admin()->create();
 
         $this->actingAs($admin)->post('/admin/books', [
@@ -105,8 +102,6 @@ class AdminBookControllerTest extends TestCase
 
     public function test_price_is_stored_in_kopecks(): void
     {
-        Queue::fake();
-
         $admin = User::factory()->admin()->create();
 
         $this->actingAs($admin)->post('/admin/books', [
@@ -134,8 +129,6 @@ class AdminBookControllerTest extends TestCase
 
     public function test_create_book_validates_unique_slug(): void
     {
-        Queue::fake();
-
         $admin = User::factory()->admin()->create();
         Book::factory()->create(['slug' => 'existing-slug']);
 
@@ -152,7 +145,6 @@ class AdminBookControllerTest extends TestCase
 
     public function test_cover_upload_dispatches_no_job_but_stores_on_s3_public(): void
     {
-        Queue::fake();
         Storage::fake('s3-public');
 
         $admin = User::factory()->admin()->create();
@@ -173,9 +165,8 @@ class AdminBookControllerTest extends TestCase
         Storage::disk('s3-public')->assertExists($book->cover_path);
     }
 
-    public function test_epub_upload_dispatches_process_job(): void
+    public function test_epub_upload_stores_on_s3_private(): void
     {
-        Queue::fake();
         Storage::fake('s3-private');
 
         $admin = User::factory()->admin()->create();
@@ -191,7 +182,9 @@ class AdminBookControllerTest extends TestCase
             'epub' => $epub,
         ]);
 
-        Queue::assertPushed(ProcessBookFileUpload::class);
+        $book = Book::query()->where('slug', 'epub-book')->firstOrFail();
+        $this->assertNotNull($book->epub_path);
+        Storage::disk('s3-private')->assertExists($book->epub_path);
     }
 
     // -------------------------------------------------------------------------
@@ -200,8 +193,6 @@ class AdminBookControllerTest extends TestCase
 
     public function test_admin_can_update_a_book(): void
     {
-        Queue::fake();
-
         $admin = User::factory()->admin()->create();
         $book = Book::factory()->create(['slug' => 'original-slug', 'price' => 10000]);
 
@@ -213,7 +204,8 @@ class AdminBookControllerTest extends TestCase
             'sort_order' => 1,
         ]);
 
-        $response->assertRedirect('/admin/books');
+        $book->refresh();
+        $response->assertRedirect(route('admin.books.edit', $book));
         $this->assertDatabaseHas('books', [
             'id' => $book->id,
             'slug' => 'updated-slug',
@@ -223,8 +215,6 @@ class AdminBookControllerTest extends TestCase
 
     public function test_update_allows_same_slug_on_current_book(): void
     {
-        Queue::fake();
-
         $admin = User::factory()->admin()->create();
         $book = Book::factory()->create(['slug' => 'my-slug']);
 
@@ -236,7 +226,8 @@ class AdminBookControllerTest extends TestCase
             'sort_order' => 0,
         ]);
 
-        $response->assertRedirect('/admin/books');
+        $book->refresh();
+        $response->assertRedirect(route('admin.books.edit', $book));
     }
 
     // -------------------------------------------------------------------------
@@ -275,7 +266,8 @@ class AdminBookControllerTest extends TestCase
         $admin = User::factory()->admin()->create();
         $book = Book::factory()->create(['status' => BookStatus::Draft]);
 
-        $this->actingAs($admin)->patch("/admin/books/{$book->slug}/toggle-status");
+        $this->actingAs($admin)->patch("/admin/books/{$book->slug}/toggle-status")
+            ->assertJson(['status' => 'published']);
 
         $this->assertDatabaseHas('books', ['id' => $book->id, 'status' => 'published']);
     }
@@ -285,7 +277,8 @@ class AdminBookControllerTest extends TestCase
         $admin = User::factory()->admin()->create();
         $book = Book::factory()->published()->create();
 
-        $this->actingAs($admin)->patch("/admin/books/{$book->slug}/toggle-status");
+        $this->actingAs($admin)->patch("/admin/books/{$book->slug}/toggle-status")
+            ->assertJson(['status' => 'draft']);
 
         $this->assertDatabaseHas('books', ['id' => $book->id, 'status' => 'draft']);
     }
@@ -299,11 +292,13 @@ class AdminBookControllerTest extends TestCase
         $admin = User::factory()->admin()->create();
         $book = Book::factory()->create(['is_featured' => false]);
 
-        $this->actingAs($admin)->patch("/admin/books/{$book->slug}/toggle-featured");
+        $this->actingAs($admin)->patch("/admin/books/{$book->slug}/toggle-featured")
+            ->assertJson(['is_featured' => true]);
 
         $this->assertDatabaseHas('books', ['id' => $book->id, 'is_featured' => true]);
 
-        $this->actingAs($admin)->patch("/admin/books/{$book->slug}/toggle-featured");
+        $this->actingAs($admin)->patch("/admin/books/{$book->slug}/toggle-featured")
+            ->assertJson(['is_featured' => false]);
 
         $this->assertDatabaseHas('books', ['id' => $book->id, 'is_featured' => false]);
     }

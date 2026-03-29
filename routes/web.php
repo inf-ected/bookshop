@@ -60,8 +60,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/cabinet', [CabinetController::class, 'index'])->name('cabinet.index');
 });
 
-// Admin panel (auth + admin role required)
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+// Admin panel (auth + verified + admin role required)
+Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/books', [AdminBookController::class, 'index'])->name('books.index');
     Route::get('/books/create', [AdminBookController::class, 'create'])->name('books.create');

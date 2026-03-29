@@ -17,6 +17,7 @@ class DashboardController extends Controller
             'total_books' => Book::query()->count(),
             'published_books' => Book::query()->published()->count(),
             'draft_books' => Book::query()->where('status', BookStatus::Draft)->count(),
+            'featured_books' => Book::query()->where('is_featured', true)->count(),
         ];
 
         return view('admin.dashboard', compact('stats'));

@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin;
 
-use App\Enums\BookStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Enum;
 
 class StoreBookRequest extends FormRequest
 {
@@ -29,7 +27,6 @@ class StoreBookRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique('books', 'slug')],
             'price' => ['required', 'numeric', 'min:0'],
-            'status' => ['required', new Enum(BookStatus::class)],
             'cover' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'cover_thumb' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'epub' => ['nullable', 'file', 'max:102400', function (string $attribute, mixed $value, \Closure $fail) {
@@ -69,7 +66,6 @@ class StoreBookRequest extends FormRequest
             'price.required' => 'Введите цену книги.',
             'price.numeric' => 'Цена должна быть числом.',
             'price.min' => 'Цена не может быть отрицательной.',
-            'status.required' => 'Выберите статус книги.',
             'cover.file' => 'Обложка должна быть файлом.',
             'cover.mimes' => 'Обложка должна быть изображением в формате JPG, PNG или WebP.',
             'cover.max' => 'Размер обложки не должен превышать 5 МБ.',

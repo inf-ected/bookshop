@@ -8,6 +8,8 @@ use App\Enums\BookStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -82,5 +84,21 @@ class Book extends Model
     public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('sort_order', 'asc');
+    }
+
+    /**
+     * Check whether this book has any purchase records (user_books).
+     * The user_books table is introduced in Phase 5. We check via schema to
+     * avoid a hard dependency on a table that may not exist in test environments.
+     */
+    public function hasAnyPurchases(): bool
+    {
+        if (! Schema::hasTable('user_books')) {
+            return false;
+        }
+
+        return DB::table('user_books')
+            ->where('book_id', $this->id)
+            ->exists();
     }
 }

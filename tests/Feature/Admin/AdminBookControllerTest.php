@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Tests\Feature\Admin;
 
 use App\Enums\BookStatus;
+use App\Jobs\ProcessBookFileUpload;
 use App\Models\Book;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -124,7 +126,7 @@ class AdminBookControllerTest extends TestCase
 
         $response = $this->actingAs($admin)->post('/admin/books', []);
 
-        $response->assertSessionHasErrors(['title', 'slug', 'price', 'status']);
+        $response->assertSessionHasErrors(['title', 'slug', 'price']);
     }
 
     public function test_create_book_validates_unique_slug(): void
@@ -165,9 +167,9 @@ class AdminBookControllerTest extends TestCase
         Storage::disk('s3-public')->assertExists($book->cover_path);
     }
 
-    public function test_epub_upload_stores_on_s3_private(): void
+    public function test_epub_upload_dispatches_process_book_file_upload_job(): void
     {
-        Storage::fake('s3-private');
+        Queue::fake();
 
         $admin = User::factory()->admin()->create();
 
@@ -177,14 +179,15 @@ class AdminBookControllerTest extends TestCase
             'title' => 'Книга с epub',
             'slug' => 'epub-book',
             'price' => '100',
-            'status' => 'draft',
             'sort_order' => 0,
             'epub' => $epub,
         ]);
 
         $book = Book::query()->where('slug', 'epub-book')->firstOrFail();
-        $this->assertNotNull($book->epub_path);
-        Storage::disk('s3-private')->assertExists($book->epub_path);
+
+        Queue::assertPushed(ProcessBookFileUpload::class, function (ProcessBookFileUpload $job) use ($book): bool {
+            return $job->bookId === $book->id;
+        });
     }
 
     // -------------------------------------------------------------------------

@@ -8,8 +8,6 @@ use App\Enums\BookStatus;
 use App\Enums\UserRole;
 use App\Models\Book;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 class BookPolicy
 {
@@ -68,22 +66,6 @@ class BookPolicy
             return false;
         }
 
-        return ! $this->bookHasPurchases($book);
-    }
-
-    /**
-     * Check whether a book has any purchase records (user_books).
-     * The user_books table is introduced in Phase 5. We check via schema to
-     * avoid a hard dependency on a table that may not exist in test environments.
-     */
-    private function bookHasPurchases(Book $book): bool
-    {
-        if (! Schema::hasTable('user_books')) {
-            return false;
-        }
-
-        return DB::table('user_books')
-            ->where('book_id', $book->id)
-            ->exists();
+        return ! $book->hasAnyPurchases();
     }
 }

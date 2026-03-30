@@ -10,6 +10,9 @@
         <nav class="hidden md:flex items-center gap-6 text-sm font-sans">
             <a href="{{ route('books.index') }}" class="hover:text-brand-200 transition">Книги</a>
             @auth
+                @if(auth()->user()->role === \App\Enums\UserRole::Admin)
+                    <a href="{{ route('admin.dashboard') }}" class="hover:text-brand-200 transition">Админ</a>
+                @endif
                 <a href="{{ route('cabinet.index') }}" class="hover:text-brand-200 transition">Личный кабинет</a>
                 <form method="POST" action="{{ route('logout') }}" class="inline">
                     @csrf
@@ -58,6 +61,11 @@
                         Книги
                     </a>
                     @auth
+                        @if(auth()->user()->role === \App\Enums\UserRole::Admin)
+                            <a href="{{ route('admin.dashboard') }}" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition">
+                                Админ
+                            </a>
+                        @endif
                         <a href="{{ route('cabinet.index') }}" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition">
                             Личный кабинет
                         </a>

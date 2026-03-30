@@ -38,6 +38,27 @@ Do not deviate from the blueprint. If something seems wrong in the blueprint, fl
 
 ---
 
+## Database Safety — CRITICAL
+
+**NEVER run any of the following commands against the dev/production database:**
+
+- `php artisan migrate:fresh` — drops ALL tables and destroys dev data
+- `php artisan migrate:fresh --seed` — same, with seeding
+- `php artisan db:wipe` — drops all tables
+- `php artisan db:seed` (without `--class`) — runs DatabaseSeeder, creates unwanted data
+
+**Allowed database commands:**
+
+- `php artisan migrate --force` — safe, only runs pending migrations
+- `php artisan db:seed --class=DevSeeder` — idempotent dev seeder (firstOrCreate)
+- `php artisan tinker --execute "..."` — read-only queries or targeted inserts only
+
+**For tests:** tests use `RefreshDatabase` with SQLite in-memory (forced by `phpunit.xml`). Never change `DB_CONNECTION` or run migrations against the real MySQL database for testing purposes.
+
+If you believe a `migrate:fresh` is needed (e.g., to fix a migration conflict), **stop and ask the user** — do not run it autonomously.
+
+---
+
 ## Implementation Rules
 
 ### General

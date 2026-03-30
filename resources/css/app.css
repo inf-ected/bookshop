@@ -25,4 +25,18 @@
     --color-text-primary: #0f172a;
     --color-text-muted:   #64748b;
     --color-text-subtle:  #94a3b8;
+
+    --color-success:       #15803d;
+    --color-success-light: #f0fdf4;
+    --color-success-border: #bbf7d0;
+    --color-success-dot:   #22c55e;
+
+    --color-error:         #b91c1c;
+    --color-error-light:   #fef2f2;
+    --color-error-border:  #fecaca;
+    --color-error-dot:     #ef4444;
+    --color-error-hover:   #991b1b;
+    --color-error-muted:   #dc2626;
 }
+
+[x-cloak] { display: none !important; }

@@ -17,6 +17,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // DatabaseSeeder is intended for testing/CI only.
+        // For dev environment setup use: php artisan db:seed --class=DevSeeder
+        if (app()->isProduction()) {
+            $this->command->error('DatabaseSeeder must not run in production.');
+
+            return;
+        }
+
         // User::factory(10)->create();
 
         User::factory()->create([

@@ -8,6 +8,8 @@ use App\Enums\BookStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -82,5 +84,31 @@ class Book extends Model
     public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('sort_order', 'asc');
+    }
+
+    /** Cached result of Schema::hasTable('user_books') — populated once per request. */
+    private static ?bool $userBooksTableExists = null;
+
+    /**
+     * Check whether this book has any purchase records (user_books).
+     * The user_books table is introduced in Phase 5. We check via schema to
+     * avoid a hard dependency on a table that may not exist in test environments.
+     * The schema check result is cached in a static property so it only hits
+     * the database once per request regardless of how many books are checked.
+     */
+    public function hasAnyPurchases(): bool
+    {
+        if (self::$userBooksTableExists === null) {
+            self::$userBooksTableExists = Schema::hasTable('user_books');
+        }
+
+        if (! self::$userBooksTableExists) {
+            return false;
+        }
+
+        // TODO: refactor to Eloquent relationship once UserBook model exists (Phase 5)
+        return DB::table('user_books')
+            ->where('book_id', $this->id)
+            ->exists();
     }
 }

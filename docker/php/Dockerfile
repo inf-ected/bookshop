@@ -1,4 +1,22 @@
 # ─────────────────────────────────────────────────────────────────────────────
+# NODE-BUILDER — compiles frontend assets (Vite 7 + Tailwind CSS v4)
+# Completely isolated from the PHP build — no Node in the PHP image.
+# Output: public/build/ (versioned CSS/JS + manifest.json)
+# ─────────────────────────────────────────────────────────────────────────────
+FROM node:22-alpine AS node-builder
+
+WORKDIR /var/www
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY vite.config.js ./
+COPY resources/ ./resources/
+
+RUN npm run build
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # BASE — PHP 8.4 runtime with required extensions
 # Shared by all subsequent stages
 # ─────────────────────────────────────────────────────────────────────────────
@@ -69,6 +87,9 @@ FROM base AS app
 WORKDIR /var/www
 
 COPY --from=builder /var/www /var/www
+# Bake compiled frontend assets into the image so the @vite directive can
+# resolve manifest.json without a host build step.
+COPY --from=node-builder /var/www/public/build /var/www/public/build
 
 RUN chown -R www-data:www-data \
         /var/www/storage \
@@ -88,3 +109,4 @@ CMD ["php-fpm"]
 FROM nginx:alpine AS nginx-static
 
 COPY --from=builder /var/www/public /var/www/public
+COPY --from=node-builder /var/www/public/build /var/www/public/build

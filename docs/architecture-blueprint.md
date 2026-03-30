@@ -367,6 +367,45 @@ Note: The webhook route has NO middleware (no CSRF, no auth). Stripe signature v
 | Listener | SendOrderConfirmationEmail | Listens to OrderPaid, queues confirmation email |
 | Mail | OrderConfirmationMail | Mailable: order confirmation with list of purchased books |
 
+### Implementation Sub-phases
+
+Phase 5 is split into 5 sessions. Each session depends on the previous.
+
+**5.1 — Data Layer** *(backend)*
+Migrations, models, enums, factories. No business logic.
+- Migrations: `cart_items`, `orders`, `order_items`, `user_books`
+- Models: `CartItem`, `Order`, `OrderItem`, `UserBook`
+- Enum: `OrderStatus` (pending, paid, refunded, failed)
+- Factories for all 4 models
+
+**5.2 — Cart** *(backend + frontend)*
+Full cart cycle, no payments.
+- `CartService` — add, remove, merge guest→user cart, totals, Rule 23
+- `CartController` — index, store, destroy
+- Cart page UI: empty / guest / auth-unverified / auth-verified states
+- Tests for all cart operations
+
+**5.3 — Order Creation + Stripe Session** *(backend)*
+Order creation and Stripe redirect. Invoke architect before starting — new infrastructure.
+- `PaymentProvider` interface + `StripePaymentProvider::createSession()`
+- `OrderService::createFromCart()` — order + order_items + price snapshot
+- `CheckoutController@store` — create order → redirect to Stripe
+- Tests: Rules 27, 28
+
+**5.4 — Webhook + Book Grant** *(backend)*
+Payment source of truth. Most critical sub-phase.
+- `WebhookController` — Stripe signature verification, Rule 35
+- `ProcessPaymentConfirmation` job — mark paid, create `user_books`, clear cart, dispatch email
+- `OrderPaid` event → `SendOrderConfirmationEmail` listener → `OrderConfirmationMail`
+- `CheckoutController@success` + `@status` (polling endpoint)
+- Tests: webhook idempotency, Rules 29, 30
+
+**5.5 — Checkout Frontend** *(frontend)*
+UI after all backend is complete.
+- Success/pending pages with Alpine.js polling (every 2s, max 30s)
+- Order confirmation email template
+- Book card "В библиотеке" state after purchase
+
 ---
 
 ## Phase 6 — Digital Delivery (epub)

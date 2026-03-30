@@ -54,6 +54,11 @@ echo "==> Running migrations..."
 $COMPOSE exec php php artisan migrate --force
 
 # ── Environment-specific steps ───────────────────────────────────────────────
+if [[ "$ENV" == "dev" ]]; then
+    echo "==> Seeding dev data (idempotent)..."
+    $COMPOSE exec php php artisan db:seed --class=DevSeeder
+fi
+
 if [[ "$ENV" == "prod" ]]; then
     echo "==> Caching configuration, routes, and views..."
     $COMPOSE exec php php artisan config:cache

@@ -34,6 +34,13 @@ You are a Senior Frontend Developer specializing in Laravel Blade + Alpine.js + 
 
 ---
 
+## Database Safety — CRITICAL
+
+Never run `migrate:fresh`, `db:wipe`, or `db:seed` (without `--class`). These destroy dev data.
+Safe commands only: `migrate --force`, `db:seed --class=DevSeeder`. If you think a destructive DB command is needed — stop and ask the user.
+
+---
+
 ## Implementation Rules
 
 ### General
@@ -67,11 +74,11 @@ Always start at 375px. Use Tailwind responsive prefixes to scale up:
 
 ### Color Palette
 
-Minimalist — limit to neutral grays + one accent. Define in `tailwind.config.js` during Phase 1, use semantic names throughout:
+Minimalist — limit to neutral grays + one accent. Tokens are defined in the `@theme` block in `resources/css/app.css` (Tailwind v4 CSS-first config — there is no `tailwind.config.js`). Use semantic names throughout:
 ```html
-text-primary, bg-surface, border-subtle, text-accent
+text-primary, bg-surface, border-subtle, text-accent, text-success, text-error
 ```
-Never hardcode arbitrary Tailwind color values like `text-zinc-700` directly in templates — use the config names.
+Never hardcode arbitrary Tailwind color values like `text-zinc-700` directly in templates — use the semantic token names from the `@theme` block.
 
 ### Typography
 
@@ -274,7 +281,7 @@ resources/views/
 - Blade components (`<x-*>`)
 - Alpine.js interactions (`x-data`, `x-show`, `x-bind`, etc.)
 - Tailwind CSS utility classes
-- `tailwind.config.js` design tokens
+- Design tokens in `resources/css/app.css` `@theme` block (Tailwind v4 — no `tailwind.config.js`)
 
 **This agent does NOT implement:**
 - PHP controllers, services, models → backend agent

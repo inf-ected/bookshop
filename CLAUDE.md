@@ -10,7 +10,7 @@ A Laravel 12 bookshop application running on PHP 8.4-fpm with Docker (nginx + My
 
 ### Docker (primary workflow)
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d   # Start all services
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d   # Start all services (incl. Vite dev server)
 docker compose down                                                      # Stop services
 docker compose -f docker-compose.yml -f docker-compose.dev.yml exec php bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml exec php php artisan <command>
@@ -19,7 +19,13 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml exec php php arti
 > **Note:** `docker-compose.dev.yml` must always be passed explicitly — it is not named `override` so it is not auto-loaded.
 
 App is served at http://localhost:8080 (HTTP) and https://localhost:8443 (HTTPS).
+Vite HMR dev server: http://localhost:5173 (started automatically by the `node` service).
 MinIO S3 API: http://localhost:9000 — MinIO console: http://localhost:9001
+
+**Frontend assets in Docker:**
+- **Dev**: the `node` container runs `npm run dev` (Vite HMR) — no Node on the host needed.
+- **Prod build**: `docker compose build` triggers the `node-builder` stage (`npm ci && npm run build`) — assets are baked into the image.
+- **No manual `npm run build` needed** — never run npm commands on the host.
 
 ### Without Docker
 ```bash
@@ -45,7 +51,7 @@ composer analyse   # Run PHPStan static analysis
 
 ## Architecture
 
-- **PHP container**: `docker/php/Dockerfile` — multi-stage build (base → builder → app). Builder runs `composer install --no-dev`.
+- **PHP container**: `docker/php/Dockerfile` — multi-stage build (node-builder → base → builder → app). `node-builder` runs `npm ci && npm run build` (Node 22 Alpine); compiled assets are copied into the `app` and `nginx-static` stages. No Node required on the host.
 - **Nginx**: serves on 8080/8443, proxies to `bookshop_php` container. Config at `docker/nginx/default.conf`.
 - **Database**: MySQL 8 with credentials from `.env` (`MYSQL_DATABASE`, `MYSQL_ROOT_PASSWORD`, `MYSQL_EXPOSE_PORT`).
 - **Redis**: used for cache/session/queue.

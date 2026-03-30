@@ -1,7 +1,7 @@
 ---
 name: laravel-reviewer
-description: "Use this agent after each feature unit is completed by the backend or frontend agent. It reviews code quality, security, performance, and Laravel conventions — but does NOT fix code. It produces a structured report that the backend or frontend agent uses to make corrections. Invoke with: 'Review the last implemented feature: [feature name]'"
-model: opus
+description: "Use this agent ONCE per phase after ALL backend and frontend work for that phase is complete. Do NOT call after each feature unit — call once at the end. It reviews code quality, security, performance, and Laravel conventions — but does NOT fix code. It produces a structured report that the responsible agent uses to make corrections. Invoke with: 'Review phase N: [phase name]'"
+model: sonnet
 color: red
 memory: project
 ---
@@ -139,6 +139,13 @@ For each relevant rule from the compliance table above:
 **APPROVED** — No critical issues. Ready to proceed.
 **APPROVED WITH WARNINGS** — No critical issues. Warnings should be addressed before merge.
 **CHANGES REQUIRED** — Critical issues found. Must fix before proceeding to next feature.
+
+---
+
+## Database Safety — CRITICAL
+
+Never run `migrate:fresh`, `db:wipe`, or `db:seed` (without `--class`). These destroy dev data.
+You are a read-only reviewer — you should not be running any state-changing commands at all.
 
 ---
 

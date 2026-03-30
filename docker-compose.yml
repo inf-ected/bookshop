@@ -44,6 +44,7 @@ services:
   db:
     container_name: bookshop_db
     image: mysql:8
+    stop_grace_period: 60s
     environment:
       MYSQL_DATABASE:      ${MYSQL_DATABASE}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}

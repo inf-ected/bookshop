@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\BookController as AdminBookController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\CabinetController;
 use App\Http\Controllers\HomeController;
@@ -56,6 +58,19 @@ Route::middleware('guest')->group(function () {
 // User cabinet (auth + verified)
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/cabinet', [CabinetController::class, 'index'])->name('cabinet.index');
+});
+
+// Admin panel (auth + verified + admin role required)
+Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/books', [AdminBookController::class, 'index'])->name('books.index');
+    Route::get('/books/create', [AdminBookController::class, 'create'])->name('books.create');
+    Route::post('/books', [AdminBookController::class, 'store'])->name('books.store');
+    Route::get('/books/{book}/edit', [AdminBookController::class, 'edit'])->name('books.edit');
+    Route::put('/books/{book}', [AdminBookController::class, 'update'])->name('books.update');
+    Route::delete('/books/{book}', [AdminBookController::class, 'destroy'])->name('books.destroy');
+    Route::patch('/books/{book}/toggle-status', [AdminBookController::class, 'toggleStatus'])->name('books.toggle-status');
+    Route::patch('/books/{book}/toggle-featured', [AdminBookController::class, 'toggleFeatured'])->name('books.toggle-featured');
 });
 
 require __DIR__.'/auth.php';

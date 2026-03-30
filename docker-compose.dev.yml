@@ -49,3 +49,20 @@ services:
       - "8025:8025"
       # SMTP port — used by the PHP container.
       - "1025:1025"
+
+  node:
+    image: node:22-alpine
+    container_name: bookshop_node
+    working_dir: /var/www
+    # Install dependencies on start (idempotent), then launch Vite dev server.
+    command: sh -c "npm install && npm run dev"
+    volumes:
+      - .:/var/www
+      # Isolate node_modules from the host to avoid cross-platform binary issues.
+      - bookshop_node_modules:/var/www/node_modules
+    ports:
+      # Vite dev server — accessed directly by the browser for HMR.
+      - "5173:5173"
+
+volumes:
+  bookshop_node_modules:

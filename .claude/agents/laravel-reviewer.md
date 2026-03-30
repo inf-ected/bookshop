@@ -1,7 +1,7 @@
 ---
 name: laravel-reviewer
-description: "Use this agent after each feature unit is completed by the backend or frontend agent. It reviews code quality, security, performance, and Laravel conventions — but does NOT fix code. It produces a structured report that the backend or frontend agent uses to make corrections. Invoke with: 'Review the last implemented feature: [feature name]'"
-model: opus
+description: "Use this agent ONCE per phase after ALL backend and frontend work for that phase is complete. Do NOT call after each feature unit — call once at the end. It reviews code quality, security, performance, and Laravel conventions — but does NOT fix code. It produces a structured report that the responsible agent uses to make corrections. Invoke with: 'Review phase N: [phase name]'"
+model: sonnet
 color: red
 memory: project
 ---

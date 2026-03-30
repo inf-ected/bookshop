@@ -140,7 +140,7 @@ class CartService
     {
         $items = $this->getItems($user, $sessionId);
 
-        return $items->sum(fn (CartItem $item): int => $item->book?->price ?? 0);
+        return $items->sum(fn (CartItem $item): int => $item->book->price ?? 0);
     }
 
     /**

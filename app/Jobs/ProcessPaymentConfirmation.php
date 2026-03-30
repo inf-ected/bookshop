@@ -31,18 +31,16 @@ class ProcessPaymentConfirmation implements ShouldQueue
 
     public function handle(): void
     {
-        $order = Order::query()->find($this->orderId);
+        /** @var Order|null $paidOrder */
+        $paidOrder = DB::transaction(function (): ?Order {
+            // Rule 30: idempotency — lock the row so concurrent workers cannot
+            // both pass the guard and process the same order twice.
+            $order = Order::query()->lockForUpdate()->find($this->orderId);
 
-        if ($order === null) {
-            return;
-        }
+            if ($order === null || $order->status === OrderStatus::Paid) {
+                return null;
+            }
 
-        // Rule 30: idempotency — if already paid, skip
-        if ($order->status === OrderStatus::Paid) {
-            return;
-        }
-
-        DB::transaction(function () use ($order): void {
             $order->status = OrderStatus::Paid;
             $order->paid_at = now();
             $order->stripe_payment_intent_id = $this->stripePaymentIntentId;
@@ -62,9 +60,14 @@ class ProcessPaymentConfirmation implements ShouldQueue
             CartItem::query()
                 ->where('user_id', $order->user_id)
                 ->delete();
+
+            return $order;
         });
 
-        // Rule 31/32: dispatch OrderPaid event to trigger confirmation email
-        OrderPaid::dispatch($order->fresh());
+        // Rule 31/32: dispatch OrderPaid event AFTER the transaction commits,
+        // so the listener sees the persisted paid state. Skip if already paid (idempotency).
+        if ($paidOrder !== null) {
+            OrderPaid::dispatch($paidOrder->fresh());
+        }
     }
 }

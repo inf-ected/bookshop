@@ -54,7 +54,7 @@ class WebhookController extends Controller
             $stripeSessionId = $session->id;
             $paymentIntentId = is_string($session->payment_intent)
                 ? $session->payment_intent
-                : (string) ($session->payment_intent?->id ?? '');
+                : (string) ($session->payment_intent->id ?? '');
 
             // Rule 30: look up order by stripe_session_id for idempotency
             $order = Order::query()

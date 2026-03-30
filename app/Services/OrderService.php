@@ -20,6 +20,10 @@ class OrderService
      * Rule 27: Order is created BEFORE Stripe redirect.
      * Rule 28: order_items.price is a snapshot of the book price at purchase time.
      *
+     * Note: cart is NOT cleared here — it is cleared by ProcessPaymentConfirmation
+     * after the webhook confirms payment. Clearing here would wipe the cart even
+     * if Stripe session creation subsequently fails.
+     *
      * @throws EmptyCartException if the cart is empty
      */
     public function createFromCart(User $user, string $sessionId): Order
@@ -30,7 +34,7 @@ class OrderService
             throw new EmptyCartException('Корзина пуста.');
         }
 
-        return DB::transaction(function () use ($user, $items, $sessionId): Order {
+        return DB::transaction(function () use ($user, $items): Order {
             $order = Order::query()->create([
                 'user_id' => $user->id,
                 'status' => OrderStatus::Pending,
@@ -46,8 +50,6 @@ class OrderService
                     'currency' => 'RUB',
                 ]);
             }
-
-            $this->cartService->clearCart($user, $sessionId);
 
             $order->load('items.book');
 

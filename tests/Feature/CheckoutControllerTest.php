@@ -108,8 +108,9 @@ class CheckoutControllerTest extends TestCase
             'currency' => 'RUB',
         ]);
 
-        // Cart cleared after order creation
-        $this->assertDatabaseCount('cart_items', 0);
+        // Cart is NOT cleared here — it is cleared by ProcessPaymentConfirmation
+        // after the webhook confirms payment (prevents cart loss on Stripe failure)
+        $this->assertDatabaseCount('cart_items', 1);
 
         // Redirected to Stripe URL
         $response->assertRedirect($this->fakeSession['url']);

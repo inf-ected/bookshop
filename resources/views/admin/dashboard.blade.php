@@ -23,7 +23,7 @@
 
     {{-- Flash success --}}
     @if (session('success'))
-        <div class="mb-6 px-4 py-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+        <div class="mb-6 px-4 py-3 bg-success-light border border-success-border rounded-lg text-sm text-success">
             {{ session('success') }}
         </div>
     @endif
@@ -43,7 +43,7 @@
         {{-- Published --}}
         <div class="bg-surface border border-border-subtle rounded-xl p-6 space-y-1">
             <p class="text-xs font-sans font-medium text-text-muted uppercase tracking-widest">Опубликовано</p>
-            <p class="font-serif text-4xl text-green-600">{{ $stats['published_books'] }}</p>
+            <p class="font-serif text-4xl text-success">{{ $stats['published_books'] }}</p>
             <p class="text-xs text-text-subtle">доступны в каталоге</p>
         </div>
 

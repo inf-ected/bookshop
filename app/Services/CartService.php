@@ -91,14 +91,21 @@ class CartService
             ->get();
 
         foreach ($guestItems as $guestItem) {
-            try {
-                CartItem::query()->create([
-                    'user_id' => $user->id,
-                    'session_id' => null,
-                    'book_id' => $guestItem->book_id,
-                ]);
-            } catch (QueryException) {
-                // Rule 25: book already in user cart — discard the duplicate.
+            $alreadyOwned = UserBook::query()
+                ->where('user_id', $user->id)
+                ->where('book_id', $guestItem->book_id)
+                ->exists();
+
+            if (! $alreadyOwned) {
+                try {
+                    CartItem::query()->create([
+                        'user_id' => $user->id,
+                        'session_id' => null,
+                        'book_id' => $guestItem->book_id,
+                    ]);
+                } catch (QueryException) {
+                    // Rule 25: book already in user cart — discard the duplicate.
+                }
             }
 
             $guestItem->delete();

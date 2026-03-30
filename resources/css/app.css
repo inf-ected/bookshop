@@ -37,6 +37,10 @@
     --color-error-dot:     #ef4444;
     --color-error-hover:   #991b1b;
     --color-error-muted:   #dc2626;
+
+    --color-warning:        #92400e;
+    --color-warning-light:  #fffbeb;
+    --color-warning-border: #fde68a;
 }
 
 [x-cloak] { display: none !important; }

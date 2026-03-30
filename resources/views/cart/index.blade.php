@@ -61,9 +61,6 @@
                                class="font-serif text-base leading-snug text-text-primary hover:text-brand-700 transition line-clamp-2">
                                 {{ $item->book->title }}
                             </a>
-                            @if($item->book->author)
-                                <p class="text-sm text-text-muted">{{ $item->book->author }}</p>
-                            @endif
                             <p class="mt-auto font-sans font-semibold text-sm text-brand-700">
                                 {{ number_format($item->book->price / 100, 0, ',', ' ') }}&nbsp;₽
                             </p>
@@ -134,7 +131,7 @@
                     @auth
                         @if(!auth()->user()->hasVerifiedEmail())
                             {{-- State 3: authenticated but email not verified --}}
-                            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+                            <div class="bg-warning-light border border-warning-border rounded-lg p-4 text-sm text-warning">
                                 <p class="font-semibold mb-1">Подтвердите email</p>
                                 <p>Для оформления заказа необходимо подтвердить адрес электронной почты.</p>
                                 <a href="{{ route('verification.notice') }}"

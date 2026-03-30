@@ -8,7 +8,7 @@ use App\Enums\BookStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
@@ -89,6 +89,11 @@ class Book extends Model
     /** Cached result of Schema::hasTable('user_books') — populated once per request. */
     private static ?bool $userBooksTableExists = null;
 
+    public function userBooks(): HasMany
+    {
+        return $this->hasMany(UserBook::class);
+    }
+
     /**
      * Check whether this book has any purchase records (user_books).
      * The user_books table is introduced in Phase 5. We check via schema to
@@ -106,9 +111,6 @@ class Book extends Model
             return false;
         }
 
-        // TODO: refactor to Eloquent relationship once UserBook model exists (Phase 5)
-        return DB::table('user_books')
-            ->where('book_id', $this->id)
-            ->exists();
+        return $this->userBooks()->exists();
     }
 }

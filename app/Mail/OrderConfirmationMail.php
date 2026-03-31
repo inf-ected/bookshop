@@ -15,7 +15,10 @@ class OrderConfirmationMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public readonly Order $order) {}
+    public function __construct(public readonly Order $order)
+    {
+        $this->order->loadMissing(['items.book', 'user']);
+    }
 
     public function envelope(): Envelope
     {

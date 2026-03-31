@@ -41,13 +41,13 @@
 
             {{-- Price + CTA --}}
             <div class="flex items-center gap-4 flex-wrap">
-                <span class="font-sans text-2xl font-bold text-accent">
+                <span class="font-sans text-2xl font-bold text-brand-700">
                     {{ number_format($book->price / 100, 0, ',', ' ') }}&nbsp;₽
                 </span>
 
                 {{-- Cart / library CTA --}}
                 @auth
-                    @if($book->userBooks()->where('user_id', auth()->id())->exists())
+                    @if($isOwned)
                         <a
                             href="{{ url('/cabinet/library') }}"
                             class="px-6 py-2.5 border border-success-border text-success bg-success-light rounded font-sans text-sm font-semibold"

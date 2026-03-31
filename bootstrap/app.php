@@ -18,6 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => EnsureAdmin::class,
         ]);
+
+        // Exempt Stripe webhook from CSRF verification (Rule 35 — signature verified inside controller)
+        $middleware->validateCsrfTokens(except: [
+            '/webhooks/stripe',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);

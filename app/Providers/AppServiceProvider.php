@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Contracts\PaymentProvider;
+use App\Events\OrderPaid;
 use App\Listeners\MergeGuestCartOnLogin;
+use App\Listeners\SendOrderConfirmationEmail;
+use App\Services\StripePaymentProvider;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
@@ -18,7 +22,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(
+            PaymentProvider::class,
+            StripePaymentProvider::class,
+        );
     }
 
     /**
@@ -33,5 +40,6 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Event::listen(Login::class, MergeGuestCartOnLogin::class);
+        Event::listen(OrderPaid::class, SendOrderConfirmationEmail::class);
     }
 }

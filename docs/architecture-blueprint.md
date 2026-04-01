@@ -477,6 +477,29 @@ No new tables. This phase uses `user_books`, `orders`, `order_items`, `oauth_pro
 | Request | UpdateProfileRequest | Validate name update |
 | Request | UpdatePasswordRequest | Validate current password, new password, confirmation |
 
+### Implementation Sub-phases
+
+Phase 7 is split into 2 sessions. Each session depends on the previous.
+
+**7.1 — Backend** *(backend)*
+Controllers, form requests, routes. No new migrations.
+- `CabinetController@index` — redirects to `/cabinet/library` (Rule 42)
+- `CabinetController@library` — owned books from `user_books` with download buttons (Rule 43)
+- `CabinetController@orders` — paginated order history (10/page, created_at DESC, Rule 44)
+- `SettingsController@edit` — show profile + password form + linked OAuth providers
+- `SettingsController@update` — update name only; email is read-only (Rule 46)
+- `SettingsController@updatePassword` — only if user has a password set (Rule 47)
+- `SettingsController@linkProvider` — link OAuth provider to existing account
+- `SettingsController@unlinkProvider` — Rule 45: cannot unlink last auth method if no password set
+- `UpdateProfileRequest`, `UpdatePasswordRequest` form requests
+- Tests: all happy paths + Rule 45 edge case + Rule 47 edge case
+
+**7.2 — Frontend** *(frontend)*
+Blade views for all cabinet pages. Backend must be complete first.
+- `/cabinet/library` — book grid with cover, title, download button per owned book
+- `/cabinet/orders` — paginated order list with status badge, items, total
+- `/cabinet/settings` — profile form, password change form, linked OAuth providers list
+
 ---
 
 ## Phase 8 — Blog / News

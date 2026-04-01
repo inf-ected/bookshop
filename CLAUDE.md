@@ -56,6 +56,8 @@ composer analyse   # Run PHPStan static analysis
 - **Database**: MySQL 8 with credentials from `.env` (`MYSQL_DATABASE`, `MYSQL_ROOT_PASSWORD`, `MYSQL_EXPOSE_PORT`).
 - **Redis**: used for cache/session/queue.
 - **MinIO**: S3-compatible local storage. Two buckets: `bookshop-public` (covers) and `bookshop-private` (epubs). Disks: `s3-public`, `s3-private` in `config/filesystems.php`.
+- **Queue worker** (`bookshop_queue`, dev only): runs `php artisan queue:work` in a separate container — processes jobs (payment confirmation, emails) automatically. Defined in `docker-compose.dev.yml`.
+- **Stripe CLI** (`bookshop_stripe`, dev only): forwards Stripe webhook events to `http://nginx/webhooks/stripe`. Requires `STRIPE_SECRET` in `.env`. Defined in `docker-compose.dev.yml`.
 - **Static analysis**: `composer analyse` (PHPStan level 5 via `phpstan.neon`, includes Larastan + banned-code extension).
 
 ## Testing

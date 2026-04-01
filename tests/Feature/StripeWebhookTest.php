@@ -181,7 +181,7 @@ class StripeWebhookTest extends TestCase
 
         $user = User::factory()->create();
         Order::factory()->create([
-            'user_id'           => $user->id,
+            'user_id' => $user->id,
             'stripe_session_id' => 'cs_test_async_session',
         ]);
 

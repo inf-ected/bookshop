@@ -5,12 +5,8 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Contracts\PaymentProvider;
-use App\Events\OrderPaid;
-use App\Listeners\MergeGuestCartOnLogin;
-use App\Listeners\SendOrderConfirmationEmail;
 use App\Models\CartItem;
 use App\Services\StripePaymentProvider;
-use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
@@ -42,9 +38,6 @@ class AppServiceProvider extends ServiceProvider
             $event->extendSocialite('instagram', \SocialiteProviders\Instagram\Provider::class);
             $event->extendSocialite('facebook', \SocialiteProviders\Facebook\Provider::class);
         });
-
-        Event::listen(Login::class, MergeGuestCartOnLogin::class);
-        Event::listen(OrderPaid::class, SendOrderConfirmationEmail::class);
 
         View::composer('partials.header', function (\Illuminate\View\View $view): void {
             if (! Schema::hasTable('cart_items')) {

@@ -6,14 +6,19 @@ This document describes the complete Docker setup for the Bookshop Laravel appli
 
 ## 1. Overview
 
-The application is a **Laravel 12** project running on **PHP 8.4-FPM** with four containers:
+The application is a **Laravel 12** project running on **PHP 8.4-FPM**. The base stack has four containers; two additional containers are added in the dev overlay:
 
-| Container | Image | Purpose |
-|---|---|---|
-| `bookshop_nginx` | `nginx:alpine` (dev) / built (prod) | Reverse proxy, serves static assets |
-| `bookshop_php` | Custom build (`docker/php/Dockerfile`) | PHP-FPM application server |
-| `bookshop_db` | `mysql:8` | Persistent relational database |
-| `bookshop_redis` | `redis:alpine` | Sessions, cache, and queues |
+| Container | Image | Env | Purpose |
+|---|---|---|---|
+| `bookshop_nginx` | `nginx:alpine` (dev) / built (prod) | base + dev/prod | Reverse proxy, serves static assets |
+| `bookshop_php` | Custom build (`docker/php/Dockerfile`) | base + dev/prod | PHP-FPM application server |
+| `bookshop_db` | `mysql:8` | base | Persistent relational database |
+| `bookshop_redis` | `redis:alpine` | base | Sessions, cache, and queues |
+| `bookshop_node` | `node:22-alpine` | dev only | Runs Vite HMR dev server (`npm run dev`) |
+| `bookshop_queue` | Custom build (`docker/php/Dockerfile`) | dev only | Queue worker (`php artisan queue:work`) |
+| `bookshop_stripe` | `stripe/stripe-cli:latest` | dev only | Forwards Stripe webhooks to nginx |
+| `bookshop_minio` | `minio/minio` | base | S3-compatible object storage (covers + epubs) |
+| `bookshop_mailpit` | `axllent/mailpit` | base | SMTP catcher — catches all outgoing mail |
 
 Host ports:
 
@@ -23,33 +28,51 @@ Host ports:
 | `8443` | nginx :443 | HTTPS (self-signed cert in dev) |
 | `3307` | db :3306 | MySQL — dev only, not exposed in prod |
 | `6379` | redis :6379 | Redis — dev only, not exposed in prod |
+| `5173` | node :5173 | Vite HMR — dev only |
+| `9000` | minio :9000 | S3-compatible API |
+| `9001` | minio :9001 | MinIO web console — dev only |
+| `8025` | mailpit :8025 | Mailpit web UI — dev only |
+| `1025` | mailpit :1025 | SMTP — used by PHP container |
 
 ---
 
 ## 2. Container Interaction Diagram
 
 ```
-Browser
-  │
-  ├─ HTTP  :8080 ──────────────────────────────────────────┐
-  └─ HTTPS :8443 ──────────────────────────────────────────┤
-                                                            │
-                                               ┌────────────▼────────────┐
-                                               │    nginx (bookshop_nginx) │
-                                               │  serves /var/www/public   │
-                                               │  static assets directly   │
-                                               └────────────┬────────────┘
-                                                            │ FastCGI :9000
-                                               ┌────────────▼────────────┐
-                                               │   php-fpm (bookshop_php)  │
-                                               │   PHP 8.4 / Laravel 12    │
-                                               └──────┬──────────┬───────┘
-                                                      │          │
-                                       ┌──────────────▼──┐   ┌──▼──────────────┐
-                                       │  MySQL 8        │   │  Redis           │
-                                       │  bookshop_db    │   │  bookshop_redis  │
-                                       │  :3306          │   │  :6379           │
-                                       └─────────────────┘   └──────────────────┘
+Browser                            Stripe (external)
+  │                                        │
+  ├─ HTTP  :8080 ──────────┐     ┌─────────┘ webhook events
+  └─ HTTPS :8443 ──────────┤     │ (dev: forwarded by bookshop_stripe CLI)
+                            │     │
+               ┌────────────▼─────▼────────┐
+               │      nginx (bookshop_nginx) │
+               │   serves /public directly   │
+               └────────────┬───────────────┘
+                            │ FastCGI :9000
+               ┌────────────▼───────────────┐
+               │    php-fpm (bookshop_php)   │
+               │    PHP 8.4 / Laravel 12     │
+               └──┬──────────┬──────────┬───┘
+                  │          │          │
+       ┌──────────▼──┐  ┌────▼────┐  ┌─▼──────────┐
+       │  MySQL 8    │  │  Redis  │  │   MinIO     │
+       │ bookshop_db │  │ :6379   │  │ :9000/:9001 │
+       │  :3306      │  └────┬────┘  └─────────────┘
+       └─────────────┘       │
+                             │ queue jobs
+               ┌─────────────▼───────────────┐
+               │  queue worker (bookshop_queue) │  ← dev only
+               │  php artisan queue:work        │
+               └────────────────────────────────┘
+
+               ┌────────────────────────────────┐
+               │  Vite HMR (bookshop_node) :5173 │  ← dev only
+               └────────────────────────────────┘
+
+               ┌────────────────────────────────┐
+               │  Mailpit (bookshop_mailpit)     │  ← dev only
+               │  SMTP :1025 / UI :8025          │
+               └────────────────────────────────┘
 ```
 
 ---
@@ -112,10 +135,13 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 ### Dev overlay additions
 
-- Exposes ports 8080/8443 (nginx), 3307 (MySQL), 6379 (Redis).
+- Exposes ports 8080/8443 (nginx), 3307 (MySQL), 6379 (Redis), 5173 (Vite), 9000/9001 (MinIO), 8025/1025 (Mailpit).
 - Bind-mounts the project directory into `php` (`:delegated`) and `nginx` (`:ro`).
 - Injects `APP_ENV=local` and `APP_DEBUG=true`.
 - Mounts `php.ini` and `www.conf` (dev pool config) into the PHP container.
+- **`bookshop_queue`** — second PHP container running `php artisan queue:work --sleep=3 --tries=3 --backoff=10`. Requires `env_file: .env` so the worker has DB/Redis credentials. Restarts automatically (`unless-stopped`).
+- **`bookshop_stripe`** — `stripe/stripe-cli` container that forwards Stripe webhook events to `http://nginx/webhooks/stripe`. Requires `STRIPE_SECRET` in `.env`. Uses `--skip-verify` (safe: traffic is internal to Docker network). Dev-only — Stripe CLI is not used in production.
+- **`bookshop_node`** — `node:22-alpine` container running `npm install && npm run dev` (Vite HMR). `node_modules` is stored in a named volume (`bookshop_node_modules`) to avoid cross-platform binary issues.
 
 ### Prod overlay additions
 

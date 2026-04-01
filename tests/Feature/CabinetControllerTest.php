@@ -40,6 +40,10 @@ class CabinetControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('cabinet.library'));
 
         $response->assertOk();
+        $response->assertViewHas('userBooks');
+
+        $userBooks = $response->viewData('userBooks');
+        $this->assertTrue($userBooks->contains('book_id', $book->id));
     }
 
     public function test_library_shows_empty_when_no_books_owned(): void
@@ -61,6 +65,11 @@ class CabinetControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('cabinet.orders'));
 
         $response->assertOk();
+        $response->assertViewHas('orders');
+
+        $orders = $response->viewData('orders');
+        $this->assertEquals(10, $orders->count());
+        $this->assertTrue($orders->hasMorePages());
     }
 
     public function test_orders_page_is_empty_when_no_orders(): void

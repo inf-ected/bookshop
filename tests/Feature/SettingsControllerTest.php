@@ -87,6 +87,7 @@ class SettingsControllerTest extends TestCase
 
     /**
      * Rule 47: Cannot change password if user has no password set.
+     * authorize() in UpdatePasswordRequest returns false → 403.
      */
     public function test_oauth_only_user_cannot_change_password_rule_47(): void
     {
@@ -98,7 +99,7 @@ class SettingsControllerTest extends TestCase
             'password_confirmation' => 'new-password',
         ]);
 
-        $response->assertSessionHasErrors('current_password');
+        $response->assertForbidden();
         $this->assertNull($user->fresh()->password);
     }
 

@@ -13,6 +13,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
+use Laravel\Socialite\Facades\Socialite;
+use Symfony\Component\HttpFoundation\Response;
 
 class SettingsController extends Controller
 {
@@ -46,16 +48,12 @@ class SettingsController extends Controller
 
     /**
      * Update password. Only allowed if user currently has a password (Rule 47).
+     * The authorize() check in UpdatePasswordRequest guards against OAuth-only users.
      */
     public function updatePassword(UpdatePasswordRequest $request): RedirectResponse
     {
         /** @var User $user */
         $user = $request->user();
-
-        if (is_null($user->password)) {
-            return redirect()->route('cabinet.settings')
-                ->withErrors(['current_password' => 'Пароль не установлен для этой учётной записи.']);
-        }
 
         $user->update(['password' => Hash::make($request->validated('password'))]);
 
@@ -64,17 +62,17 @@ class SettingsController extends Controller
 
     /**
      * Link an OAuth provider to the current user's account.
+     * Stores a link intent in session then redirects to the OAuth provider.
      */
-    public function linkProvider(Request $request, string $provider): RedirectResponse
+    public function linkProvider(Request $request, string $provider): Response
     {
         if (! OauthProvider::tryFrom($provider)) {
             abort(404);
         }
 
-        // Store intent in session then redirect to OAuth
         session()->put('oauth_link_intent', true);
 
-        return redirect()->route('cabinet.settings')->with('status', 'provider-link-initiated');
+        return Socialite::driver($provider)->redirect();
     }
 
     /**

@@ -53,12 +53,14 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// OAuth routes (guest only)
+// OAuth redirect and callback — no guest middleware so authenticated users can link providers.
+// Complete-registration routes remain guest-only (they are part of the initial signup flow).
+Route::get('/auth/{provider}/redirect', [OAuthController::class, 'redirect'])
+    ->name('auth.oauth.redirect');
+Route::get('/auth/{provider}/callback', [OAuthController::class, 'callback'])
+    ->name('auth.oauth.callback');
+
 Route::middleware('guest')->group(function () {
-    Route::get('/auth/{provider}/redirect', [OAuthController::class, 'redirect'])
-        ->name('auth.oauth.redirect');
-    Route::get('/auth/{provider}/callback', [OAuthController::class, 'callback'])
-        ->name('auth.oauth.callback');
     Route::get('/auth/complete-registration', [OAuthController::class, 'showCompleteRegistration'])
         ->name('auth.complete-registration');
     Route::post('/auth/complete-registration', [OAuthController::class, 'completeRegistration'])

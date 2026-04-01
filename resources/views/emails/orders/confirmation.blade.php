@@ -1,17 +1,26 @@
 @component('mail::message')
-# Ваш заказ подтверждён
+# Подтверждение заказа №{{ $order->id }}
 
-Спасибо за покупку! Ваш заказ **#{{ $order->id }}** успешно оплачен.
+Спасибо за покупку, **{{ $order->user->name }}**!
 
-## Приобретённые книги
+Ваш заказ успешно оплачен. Книги уже доступны в вашей библиотеке.
 
+---
+
+## Состав заказа
+
+@component('mail::table')
+| Книга | Цена |
+|:------|-----:|
 @foreach ($order->items as $item)
-- **{{ $item->book->title }}** — {{ number_format($item->price / 100, 2, ',', ' ') }} ₽
+| {{ $item->book->title }} | {{ number_format($item->price / 100, 0, ',', ' ') }} ₽ |
 @endforeach
+| **Итого** | **{{ number_format($order->total_amount / 100, 0, ',', ' ') }} ₽** |
+@endcomponent
 
-**Итого:** {{ number_format($order->total_amount / 100, 2, ',', ' ') }} ₽
-
-Книги доступны в вашей [библиотеке]({{ url('/cabinet/library') }}).
+@component('mail::button', ['url' => url('/cabinet/library')])
+Перейти в библиотеку
+@endcomponent
 
 С уважением,<br>
 {{ config('app.name') }}

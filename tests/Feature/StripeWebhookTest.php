@@ -146,7 +146,7 @@ class StripeWebhookTest extends TestCase
     // Idempotency (Rule 30)
     // -------------------------------------------------------------------------
 
-    public function test_webhook_dispatches_job_even_if_order_already_paid_job_handles_idempotency(): void
+    public function test_webhook_skips_job_if_order_already_paid(): void
     {
         Queue::fake();
 
@@ -171,8 +171,41 @@ class StripeWebhookTest extends TestCase
 
         $response->assertStatus(200);
 
-        // Job is dispatched — idempotency is handled inside the job
-        Queue::assertPushed(ProcessPaymentConfirmation::class);
+        // Controller short-circuits for already-paid orders — no job dispatched
+        Queue::assertNotPushed(ProcessPaymentConfirmation::class);
+    }
+
+    public function test_webhook_skips_job_when_payment_status_is_not_paid(): void
+    {
+        Queue::fake();
+
+        $user = User::factory()->create();
+        Order::factory()->create([
+            'user_id' => $user->id,
+            'stripe_session_id' => 'cs_test_async_session',
+        ]);
+
+        // Simulate an async payment method (e.g. bank transfer) where the session
+        // completes but funds have not yet arrived — payment_status is 'unpaid'.
+        $event = $this->buildCheckoutSessionCompletedEvent(
+            'cs_test_async_session',
+            'pi_test_async_intent',
+            ['data' => ['object' => ['id' => 'cs_test_async_session', 'object' => 'checkout.session', 'payment_intent' => 'pi_test_async_intent', 'payment_status' => 'unpaid']]],
+        );
+        $webhook = $this->buildStripeWebhook($event);
+
+        $response = $this->call(
+            'POST',
+            route('webhooks.stripe'),
+            [],
+            [],
+            [],
+            ['HTTP_Stripe-Signature' => $webhook['signature'], 'CONTENT_TYPE' => 'application/json'],
+            $webhook['payload']
+        );
+
+        $response->assertStatus(200);
+        Queue::assertNotPushed(ProcessPaymentConfirmation::class);
     }
 
     public function test_webhook_returns_200_when_order_not_found(): void

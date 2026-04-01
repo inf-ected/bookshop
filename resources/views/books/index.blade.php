@@ -17,7 +17,7 @@
     @else
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             @foreach($books as $book)
-                <x-book-card :book="$book" />
+                <x-book-card :book="$book" :owned-book-ids="$ownedBookIds" />
             @endforeach
         </div>
     @endif

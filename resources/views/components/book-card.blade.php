@@ -1,4 +1,8 @@
-@props(['book'])
+@props(['book', 'ownedBookIds' => null])
+
+@php
+    $isOwned = $ownedBookIds && $ownedBookIds->contains($book->id);
+@endphp
 
 <div class="flex flex-col bg-white rounded-lg border border-border-subtle overflow-hidden shadow-sm hover:shadow-md transition-shadow">
 
@@ -30,19 +34,31 @@
         </a>
 
         <div class="mt-auto pt-3 flex items-center justify-between gap-2">
-            <span class="text-accent font-sans font-semibold text-sm">
+            <span class="font-sans font-semibold text-sm text-brand-700">
                 {{ number_format($book->price / 100, 0, ',', ' ') }}&nbsp;₽
             </span>
 
-            {{-- Cart button — disabled until Phase 5 --}}
-            <button
-                type="button"
-                disabled
-                class="px-3 py-1.5 text-xs font-sans rounded border border-border-subtle text-text-subtle cursor-not-allowed bg-surface-muted"
-                title="Добавить в корзину"
-            >
-                В корзину
-            </button>
+            @if($isOwned)
+                {{-- State: already in library --}}
+                <a
+                    href="{{ url('/cabinet/library') }}"
+                    class="px-3 py-1.5 text-xs font-sans rounded border border-success-border text-success bg-success-light hover:bg-success-light transition"
+                >
+                    В библиотеке
+                </a>
+            @else
+                {{-- Default state: add to cart --}}
+                <form method="POST" action="{{ route('cart.store', $book) }}">
+                    @csrf
+                    <button
+                        type="submit"
+                        class="px-3 py-1.5 text-xs font-sans rounded border border-brand-700 text-brand-700 hover:bg-brand-50 transition"
+                        title="Добавить в корзину"
+                    >
+                        В корзину
+                    </button>
+                </form>
+            @endif
         </div>
     </div>
 

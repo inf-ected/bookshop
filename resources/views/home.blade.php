@@ -54,7 +54,7 @@
                 >
                     @foreach($books as $i => $book)
                         <div class="snap-start shrink-0 w-44 md:w-52" data-slide="{{ $i }}">
-                            <x-book-card :book="$book" />
+                            <x-book-card :book="$book" :owned-book-ids="$ownedBookIds" />
                         </div>
                     @endforeach
                 </div>

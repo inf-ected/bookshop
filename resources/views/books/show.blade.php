@@ -41,18 +41,38 @@
 
             {{-- Price + CTA --}}
             <div class="flex items-center gap-4 flex-wrap">
-                <span class="font-sans text-2xl font-bold text-accent">
+                <span class="font-sans text-2xl font-bold text-brand-700">
                     {{ number_format($book->price / 100, 0, ',', ' ') }}&nbsp;₽
                 </span>
 
-                {{-- Cart — disabled until Phase 5 --}}
-                <button
-                    type="button"
-                    disabled
-                    class="px-6 py-2.5 bg-surface-muted text-text-subtle border border-border-subtle rounded font-sans text-sm cursor-not-allowed"
-                >
-                    Добавить в корзину
-                </button>
+                {{-- Cart / library CTA --}}
+                @auth
+                    @if($isOwned)
+                        <a
+                            href="{{ url('/cabinet/library') }}"
+                            class="px-6 py-2.5 border border-success-border text-success bg-success-light rounded font-sans text-sm font-semibold"
+                        >
+                            В библиотеке
+                        </a>
+                    @else
+                        <form method="POST" action="{{ route('cart.store', $book) }}">
+                            @csrf
+                            <button
+                                type="submit"
+                                class="px-6 py-2.5 bg-brand-700 text-white rounded font-sans text-sm hover:bg-brand-800 transition font-semibold"
+                            >
+                                В корзину
+                            </button>
+                        </form>
+                    @endif
+                @else
+                    <a
+                        href="{{ route('login') }}"
+                        class="px-6 py-2.5 bg-brand-700 text-white rounded font-sans text-sm hover:bg-brand-800 transition font-semibold"
+                    >
+                        В корзину
+                    </a>
+                @endauth
 
                 @if($book->fragment)
                     <a

@@ -50,6 +50,41 @@ services:
       # SMTP port — used by the PHP container.
       - "1025:1025"
 
+  queue:
+    container_name: bookshop_queue
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: app
+      args:
+        HOST_UID: "${HOST_UID:-1000}"
+        HOST_GID: "${HOST_GID:-1000}"
+    env_file: .env
+    environment:
+      APP_ENV:   local
+      APP_DEBUG: "true"
+    volumes:
+      - .:/var/www:delegated
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+      - ./docker/php/www.conf:/usr/local/etc/php-fpm.d/www.conf:ro
+    command: php artisan queue:work --sleep=3 --tries=3 --backoff=10
+    depends_on:
+      php:
+        condition: service_started
+    restart: unless-stopped
+
+  stripe:
+    container_name: bookshop_stripe
+    image: stripe/stripe-cli:latest
+    # --skip-verify is safe here: traffic stays inside Docker's internal network,
+    # never leaves the machine, so TLS verification provides no security benefit.
+    command: listen --forward-to http://nginx/webhooks/stripe --skip-verify
+    environment:
+      STRIPE_API_KEY: ${STRIPE_SECRET}
+    depends_on:
+      - nginx
+    restart: unless-stopped
+
   node:
     image: node:22-alpine
     container_name: bookshop_node

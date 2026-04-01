@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\BookStatus;
 use App\Models\Book;
+use App\Models\UserBook;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class BookController extends Controller
@@ -17,7 +19,11 @@ class BookController extends Controller
             ->ordered()
             ->get();
 
-        return view('books.index', compact('books'));
+        $ownedBookIds = Auth::check()
+            ? UserBook::query()->where('user_id', Auth::id())->pluck('book_id')
+            : collect();
+
+        return view('books.index', compact('books', 'ownedBookIds'));
     }
 
     public function show(Book $book): View
@@ -26,7 +32,12 @@ class BookController extends Controller
             abort(404);
         }
 
-        return view('books.show', compact('book'));
+        $isOwned = Auth::check() && UserBook::query()
+            ->where('user_id', Auth::id())
+            ->where('book_id', $book->id)
+            ->exists();
+
+        return view('books.show', compact('book', 'isOwned'));
     }
 
     public function fragment(Book $book): View

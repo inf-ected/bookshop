@@ -7,6 +7,7 @@ namespace App\Listeners;
 use App\Events\OrderPaid;
 use App\Mail\OrderConfirmationMail;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class SendOrderConfirmationEmail implements ShouldQueue
@@ -16,7 +17,13 @@ class SendOrderConfirmationEmail implements ShouldQueue
         $order = $event->order;
         $order->loadMissing(['user', 'items.book']);
 
+        Log::info('SendOrderConfirmationEmail: sending to '.$order->user->email, [
+            'order_id' => $order->id,
+        ]);
+
         Mail::to($order->user->email)
-            ->queue(new OrderConfirmationMail($order));
+            ->send(new OrderConfirmationMail($order));
+
+        Log::info('SendOrderConfirmationEmail: sent', ['order_id' => $order->id]);
     }
 }

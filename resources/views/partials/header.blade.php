@@ -9,6 +9,20 @@
         {{-- Desktop nav --}}
         <nav class="hidden md:flex items-center gap-6 text-sm font-sans">
             <a href="{{ route('books.index') }}" class="hover:text-brand-200 transition">Книги</a>
+
+            {{-- Cart icon with badge --}}
+            <a href="{{ route('cart.index') }}" class="relative hover:text-brand-200 transition" aria-label="Корзина">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 2.3A1 1 0 006 17h12M9 21a1 1 0 100-2 1 1 0 000 2zm10 0a1 1 0 100-2 1 1 0 000 2z"/>
+                </svg>
+                @if($cartCount > 0)
+                    <span class="absolute -top-2 -right-2 w-4 h-4 bg-white text-brand-900 text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                        {{ $cartCount > 9 ? '9+' : $cartCount }}
+                    </span>
+                @endif
+            </a>
+
             @auth
                 @if(auth()->user()->role === \App\Enums\UserRole::Admin)
                     <a href="{{ route('admin.dashboard') }}" class="hover:text-brand-200 transition">Админ</a>
@@ -59,6 +73,14 @@
                 <nav class="flex flex-col px-4 py-3 gap-1 text-sm font-sans">
                     <a href="{{ route('books.index') }}" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition">
                         Книги
+                    </a>
+                    <a href="{{ route('cart.index') }}" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition flex items-center justify-between">
+                        Корзина
+                        @if($cartCount > 0)
+                            <span class="px-1.5 py-0.5 bg-brand-700 text-white text-[10px] font-bold rounded-full leading-none">
+                                {{ $cartCount > 9 ? '9+' : $cartCount }}
+                            </span>
+                        @endif
                     </a>
                     @auth
                         @if(auth()->user()->role === \App\Enums\UserRole::Admin)

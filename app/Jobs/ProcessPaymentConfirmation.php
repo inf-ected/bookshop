@@ -12,6 +12,7 @@ use App\Models\UserBook;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ProcessPaymentConfirmation implements ShouldQueue
 {
@@ -31,13 +32,26 @@ class ProcessPaymentConfirmation implements ShouldQueue
 
     public function handle(): void
     {
+        Log::info('ProcessPaymentConfirmation: starting', [
+            'order_id' => $this->orderId,
+            'session_id' => $this->stripeSessionId,
+        ]);
+
         /** @var Order|null $paidOrder */
         $paidOrder = DB::transaction(function (): ?Order {
             // Rule 30: idempotency — lock the row so concurrent workers cannot
             // both pass the guard and process the same order twice.
             $order = Order::query()->lockForUpdate()->find($this->orderId);
 
-            if ($order === null || $order->status === OrderStatus::Paid) {
+            if ($order === null) {
+                Log::warning('ProcessPaymentConfirmation: order not found', ['order_id' => $this->orderId]);
+
+                return null;
+            }
+
+            if ($order->status === OrderStatus::Paid) {
+                Log::info('ProcessPaymentConfirmation: already paid, skipping', ['order_id' => $this->orderId]);
+
                 return null;
             }
 
@@ -61,12 +75,19 @@ class ProcessPaymentConfirmation implements ShouldQueue
                 ->where('user_id', $order->user_id)
                 ->delete();
 
+            Log::info('ProcessPaymentConfirmation: order marked paid', [
+                'order_id' => $order->id,
+                'user_id' => $order->user_id,
+                'books_granted' => $order->items->count(),
+            ]);
+
             return $order;
         });
 
         // Rule 31/32: dispatch OrderPaid event AFTER the transaction commits,
         // so the listener sees the persisted paid state. Skip if already paid (idempotency).
         if ($paidOrder !== null) {
+            Log::info('ProcessPaymentConfirmation: dispatching OrderPaid event', ['order_id' => $paidOrder->id]);
             OrderPaid::dispatch($paidOrder->fresh());
         }
     }

@@ -8,6 +8,7 @@ use App\Http\Controllers\BookController;
 use App\Http\Controllers\CabinetController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OAuthController;
 use App\Http\Controllers\ProfileController;
@@ -72,6 +73,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 // Stripe webhook — no CSRF, no auth middleware (Rule 35)
 Route::post('/webhooks/stripe', [WebhookController::class, 'handleStripe'])->name('webhooks.stripe');
+
+// Download (auth + verified + rate limited)
+Route::get('/books/{book:slug}/download', [DownloadController::class, 'show'])
+    ->middleware(['auth', 'verified', 'throttle:download'])
+    ->name('books.download');
 
 // User cabinet (auth + verified)
 Route::middleware(['auth', 'verified'])->group(function () {

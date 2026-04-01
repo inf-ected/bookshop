@@ -113,4 +113,9 @@ class Book extends Model
 
         return $this->userBooks()->exists();
     }
+
+    public function isPublished(): bool
+    {
+        return $this->status === BookStatus::Published;
+    }
 }

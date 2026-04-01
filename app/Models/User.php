@@ -65,6 +65,11 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
+    public function isAdmin(): bool
+    {
+        return $this->role === UserRole::Admin;
+    }
+
     public function sendEmailVerificationNotification(): void
     {
         $this->notify(new VerifyEmailNotification);
@@ -73,5 +78,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function oauthProviders(): HasMany
     {
         return $this->hasMany(OAuthProvider::class);
+    }
+
+    public function userBooks(): HasMany
+    {
+        return $this->hasMany(UserBook::class);
     }
 }

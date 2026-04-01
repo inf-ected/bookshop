@@ -4,23 +4,17 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use App\Enums\BookStatus;
-use App\Enums\UserRole;
 use App\Models\Book;
 use App\Models\User;
 
 class BookPolicy
 {
-    /**
-     * Only admins can manage books in the admin panel.
-     */
-    public function before(User $user, string $ability): ?bool
+    protected function isUserOwner(User $user, Book $book): bool
     {
-        if ($user->role !== UserRole::Admin) {
-            return false;
-        }
-
-        return null;
+        return $user
+            ->userBooks()
+            ->where('book_id', $book->id)
+            ->exists();
     }
 
     /**
@@ -28,7 +22,7 @@ class BookPolicy
      */
     public function viewAny(User $user): bool
     {
-        return true;
+        return $user->isAdmin();
     }
 
     /**
@@ -36,7 +30,7 @@ class BookPolicy
      */
     public function view(User $user, Book $book): bool
     {
-        return true;
+        return $user->isAdmin();
     }
 
     /**
@@ -44,7 +38,7 @@ class BookPolicy
      */
     public function create(User $user): bool
     {
-        return true;
+        return $user->isAdmin();
     }
 
     /**
@@ -52,7 +46,7 @@ class BookPolicy
      */
     public function update(User $user, Book $book): bool
     {
-        return true;
+        return $user->isAdmin();
     }
 
     /**
@@ -62,10 +56,14 @@ class BookPolicy
      */
     public function delete(User $user, Book $book): bool
     {
-        if ($book->status === BookStatus::Published) {
-            return false;
-        }
+        return
+            $user->isAdmin() &&
+            ! $book->isPublished() &&
+            ! $book->hasAnyPurchases();
+    }
 
-        return ! $book->hasAnyPurchases();
+    public function download(User $user, Book $book): bool
+    {
+        return $this->isUserOwner($user, $book);
     }
 }

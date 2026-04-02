@@ -28,7 +28,10 @@ class SettingsController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $linkedProviders = $user->oauthProviders()->pluck('provider')->all();
+        $linkedProviders = $user->oauthProviders()
+            ->pluck('provider')
+            ->map(fn (OauthProvider $p) => $p->value)
+            ->all();
 
         return view('cabinet.settings', compact('user', 'linkedProviders'));
     }

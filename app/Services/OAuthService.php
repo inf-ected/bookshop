@@ -113,6 +113,15 @@ class OAuthService
      */
     public function linkProvider(User $user, string $provider, SocialiteUser $socialiteUser): OAuthProvider
     {
+        $existing = OAuthProvider::query()
+            ->where('provider', $provider)
+            ->where('provider_id', $socialiteUser->getId())
+            ->first();
+
+        if ($existing && $existing->user_id !== $user->id) {
+            throw new \RuntimeException('Этот аккаунт уже привязан к другому пользователю.');
+        }
+
         return OAuthProvider::firstOrCreate(
             ['provider' => $provider, 'provider_id' => $socialiteUser->getId()],
             [
@@ -130,6 +139,12 @@ class OAuthService
      */
     public function unlinkProvider(User $user, string $provider): void
     {
+        $record = $user->oauthProviders()->where('provider', $provider)->first();
+
+        if (! $record) {
+            return;
+        }
+
         $hasPassword = ! is_null($user->password);
         $providerCount = $user->oauthProviders()->count();
 
@@ -137,6 +152,6 @@ class OAuthService
             throw new \RuntimeException('Нельзя отвязать единственный способ входа без установленного пароля.');
         }
 
-        $user->oauthProviders()->where('provider', $provider)->delete();
+        $record->delete();
     }
 }

@@ -12,6 +12,7 @@ use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OAuthController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StaticPageController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
@@ -52,12 +53,14 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// OAuth routes (guest only)
+// OAuth redirect and callback — no guest middleware so authenticated users can link providers.
+// Complete-registration routes remain guest-only (they are part of the initial signup flow).
+Route::get('/auth/{provider}/redirect', [OAuthController::class, 'redirect'])
+    ->name('auth.oauth.redirect');
+Route::get('/auth/{provider}/callback', [OAuthController::class, 'callback'])
+    ->name('auth.oauth.callback');
+
 Route::middleware('guest')->group(function () {
-    Route::get('/auth/{provider}/redirect', [OAuthController::class, 'redirect'])
-        ->name('auth.oauth.redirect');
-    Route::get('/auth/{provider}/callback', [OAuthController::class, 'callback'])
-        ->name('auth.oauth.callback');
     Route::get('/auth/complete-registration', [OAuthController::class, 'showCompleteRegistration'])
         ->name('auth.complete-registration');
     Route::post('/auth/complete-registration', [OAuthController::class, 'completeRegistration'])
@@ -80,8 +83,15 @@ Route::get('/books/{book:slug}/download', [DownloadController::class, 'show'])
     ->name('books.download');
 
 // User cabinet (auth + verified)
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/cabinet', [CabinetController::class, 'index'])->name('cabinet.index');
+Route::middleware(['auth', 'verified'])->prefix('cabinet')->name('cabinet.')->group(function () {
+    Route::get('/', [CabinetController::class, 'index'])->name('index');
+    Route::get('/library', [CabinetController::class, 'library'])->name('library');
+    Route::get('/orders', [CabinetController::class, 'orders'])->name('orders');
+    Route::get('/settings', [SettingsController::class, 'edit'])->name('settings');
+    Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
+    Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
+    Route::post('/settings/oauth/{provider}', [SettingsController::class, 'linkProvider'])->name('settings.oauth.link');
+    Route::delete('/settings/oauth/{provider}', [SettingsController::class, 'unlinkProvider'])->name('settings.oauth.unlink');
 });
 
 // Admin panel (auth + verified + admin role required)

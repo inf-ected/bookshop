@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\OauthProvider;
 use App\Http\Requests\Auth\CompleteRegistrationRequest;
+use App\Models\User as UserModel;
 use App\Services\OAuthService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -39,6 +40,15 @@ class OAuthController extends Controller
             $socialUser = Socialite::driver($provider)->user();
         } catch (Throwable) {
             return redirect()->route('login')->withErrors(['oauth' => 'Не удалось войти через внешний сервис.']);
+        }
+
+        // Handle OAuth provider linking for authenticated users (Rule C1).
+        if (session()->pull('oauth_link_intent')) {
+            /** @var UserModel $authUser */
+            $authUser = Auth::user();
+            $this->oauthService->linkProvider($authUser, $provider, $socialUser);
+
+            return redirect()->route('cabinet.settings')->with('status', 'provider-linked');
         }
 
         $result = $this->oauthService->handleCallback($provider, $socialUser);

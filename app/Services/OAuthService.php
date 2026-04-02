@@ -107,4 +107,36 @@ class OAuthService
             return $user;
         });
     }
+
+    /**
+     * Link an OAuth provider to the currently authenticated user via Socialite token.
+     */
+    public function linkProvider(User $user, string $provider, SocialiteUser $socialiteUser): OAuthProvider
+    {
+        return OAuthProvider::firstOrCreate(
+            ['provider' => $provider, 'provider_id' => $socialiteUser->getId()],
+            [
+                'user_id' => $user->id,
+                'token' => $socialiteUser->token,
+                'refresh_token' => $socialiteUser->refreshToken,
+            ],
+        );
+    }
+
+    /**
+     * Unlink an OAuth provider from the user's account.
+     *
+     * Rule 45: cannot unlink last provider if user has no password.
+     */
+    public function unlinkProvider(User $user, string $provider): void
+    {
+        $hasPassword = ! is_null($user->password);
+        $providerCount = $user->oauthProviders()->count();
+
+        if (! $hasPassword && $providerCount <= 1) {
+            throw new \RuntimeException('Нельзя отвязать единственный способ входа без установленного пароля.');
+        }
+
+        $user->oauthProviders()->where('provider', $provider)->delete();
+    }
 }

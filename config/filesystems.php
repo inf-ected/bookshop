@@ -92,6 +92,23 @@ return [
             'report' => false,
         ],
 
+        // Same private bucket but uses the public-facing endpoint for signing pre-signed URLs.
+        // In local dev the PHP container reaches MinIO via minio:9000 (S3_ENDPOINT), but that
+        // hostname is unreachable from the browser. S3_TEMPORARY_URL_BASE overrides the endpoint
+        // used only when generating temporary download URLs so the signature matches.
+        's3-private-presign' => [
+            'driver' => 's3',
+            'key' => env('S3_PRIVATE_ACCESS_KEY_ID'),
+            'secret' => env('S3_PRIVATE_SECRET_ACCESS_KEY'),
+            'region' => env('S3_PRIVATE_REGION', 'us-east-1'),
+            'bucket' => env('S3_PRIVATE_BUCKET', 'bookshop-private'),
+            'endpoint' => env('S3_TEMPORARY_URL_BASE', env('S3_ENDPOINT')),
+            'use_path_style_endpoint' => env('S3_USE_PATH_STYLE_ENDPOINT', true),
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*

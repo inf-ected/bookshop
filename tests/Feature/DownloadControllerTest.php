@@ -29,7 +29,7 @@ class DownloadControllerTest extends TestCase
     }
 
     /**
-     * Swap the s3-private disk with a mock that returns a predictable temporaryUrl.
+     * Swap the s3-private-presign disk with a mock that returns a predictable temporaryUrl.
      */
     private function mockPrivateDisk(): void
     {
@@ -37,7 +37,7 @@ class DownloadControllerTest extends TestCase
         $mock->shouldReceive('temporaryUrl')
             ->andReturn('https://s3.example.com/fake-signed-url');
 
-        Storage::set('s3-private', $mock);
+        Storage::set('s3-private-presign', $mock);
     }
 
     public function test_owner_can_download_book(): void

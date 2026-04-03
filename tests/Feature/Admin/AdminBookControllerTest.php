@@ -8,6 +8,7 @@ use App\Enums\BookStatus;
 use App\Jobs\ProcessBookFileUpload;
 use App\Models\Book;
 use App\Models\User;
+use App\Models\UserBook;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
@@ -231,6 +232,24 @@ class AdminBookControllerTest extends TestCase
         $response->assertRedirect(route('admin.books.edit', $book));
     }
 
+    public function test_update_cannot_publish_book_without_epub(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $book = Book::factory()->create(['status' => BookStatus::Draft, 'epub_path' => null]);
+
+        $response = $this->actingAs($admin)->put("/admin/books/{$book->slug}", [
+            'title' => $book->title,
+            'slug' => $book->slug,
+            'price' => '100',
+            'status' => 'published',
+            'sort_order' => 0,
+        ]);
+
+        $response->assertRedirect(route('admin.books.edit', $book));
+        $response->assertSessionHasErrors('status');
+        $this->assertDatabaseHas('books', ['id' => $book->id, 'status' => 'draft']);
+    }
+
     // -------------------------------------------------------------------------
     // Delete book — Rule 16, 17, 18
     // -------------------------------------------------------------------------
@@ -251,10 +270,22 @@ class AdminBookControllerTest extends TestCase
         $admin = User::factory()->admin()->create();
         $book = Book::factory()->published()->create();
 
-        // BookPolicy::delete returns false for published books → redirect with error flash
         $this->actingAs($admin)->delete("/admin/books/{$book->slug}")
             ->assertRedirect(route('admin.books.index'))
-            ->assertSessionHas('error');
+            ->assertSessionHas('error', 'Нельзя удалить опубликованную книгу.');
+
+        $this->assertDatabaseHas('books', ['id' => $book->id]);
+    }
+
+    public function test_admin_cannot_delete_draft_book_with_purchases(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $book = Book::factory()->create(['status' => BookStatus::Draft]);
+        UserBook::factory()->create(['book_id' => $book->id]);
+
+        $this->actingAs($admin)->delete("/admin/books/{$book->slug}")
+            ->assertRedirect(route('admin.books.index'))
+            ->assertSessionHas('error', 'Нельзя удалить книгу, у которой есть покупки.');
 
         $this->assertDatabaseHas('books', ['id' => $book->id]);
     }
@@ -263,15 +294,27 @@ class AdminBookControllerTest extends TestCase
     // Toggle status — Rule 15, 17
     // -------------------------------------------------------------------------
 
-    public function test_toggle_status_publishes_draft_book(): void
+    public function test_toggle_status_publishes_draft_book_with_epub(): void
     {
         $admin = User::factory()->admin()->create();
-        $book = Book::factory()->create(['status' => BookStatus::Draft]);
+        $book = Book::factory()->withEpub()->create(['status' => BookStatus::Draft]);
 
         $this->actingAs($admin)->patch("/admin/books/{$book->slug}/toggle-status")
             ->assertJson(['status' => 'published']);
 
         $this->assertDatabaseHas('books', ['id' => $book->id, 'status' => 'published']);
+    }
+
+    public function test_toggle_status_cannot_publish_draft_book_without_epub(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $book = Book::factory()->create(['status' => BookStatus::Draft, 'epub_path' => null]);
+
+        $this->actingAs($admin)->patch("/admin/books/{$book->slug}/toggle-status")
+            ->assertStatus(422)
+            ->assertJson(['error' => 'Нельзя опубликовать книгу без файла epub.']);
+
+        $this->assertDatabaseHas('books', ['id' => $book->id, 'status' => 'draft']);
     }
 
     public function test_toggle_status_unpublishes_published_book_with_no_purchases(): void

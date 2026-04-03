@@ -41,6 +41,14 @@ class BookFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => BookStatus::Published,
+            'epub_path' => 'epubs/'.fake()->uuid().'.epub',
+        ]);
+    }
+
+    public function withEpub(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'epub_path' => 'epubs/'.fake()->uuid().'.epub',
         ]);
     }
 

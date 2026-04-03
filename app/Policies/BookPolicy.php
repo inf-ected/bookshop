@@ -6,6 +6,7 @@ namespace App\Policies;
 
 use App\Models\Book;
 use App\Models\User;
+use Illuminate\Auth\Access\Response;
 
 class BookPolicy
 {
@@ -51,15 +52,24 @@ class BookPolicy
 
     /**
      * A book can be deleted only if it is a draft AND has no purchases.
-     * Rule 16: published book with purchases cannot be deleted.
+     * Rule 16: published books cannot be deleted.
      * Rule 18: draft books with no purchases can be deleted.
      */
-    public function delete(User $user, Book $book): bool
+    public function delete(User $user, Book $book): Response|bool
     {
-        return
-            $user->isAdmin() &&
-            ! $book->isPublished() &&
-            ! $book->hasAnyPurchases();
+        if (! $user->isAdmin()) {
+            return false;
+        }
+
+        if ($book->isPublished()) {
+            return Response::deny('Нельзя удалить опубликованную книгу.');
+        }
+
+        if ($book->hasAnyPurchases()) {
+            return Response::deny('Нельзя удалить книгу, у которой есть покупки.');
+        }
+
+        return true;
     }
 
     public function download(User $user, Book $book): bool

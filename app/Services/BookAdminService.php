@@ -91,6 +91,11 @@ class BookAdminService
             throw new \InvalidArgumentException('Нельзя снять с публикации книгу, у которой есть покупки.');
         }
 
+        // Cannot publish a book that has no epub file.
+        if ($newStatus === BookStatus::Published && $epub === null && $book->epub_path === null) {
+            throw new \InvalidArgumentException('Нельзя опубликовать книгу без файла epub.');
+        }
+
         return DB::transaction(function () use ($book, $data, $cover, $coverThumb, $epub): Book {
             $book->title = $data['title'];
             $book->slug = $data['slug'];
@@ -126,5 +131,56 @@ class BookAdminService
 
             return $book;
         });
+    }
+
+    /**
+     * Toggle the book's published/draft status.
+     *
+     * Rule 17: cannot unpublish a book that has purchases.
+     * Cannot publish a book without an epub file.
+     *
+     * @throws \InvalidArgumentException on rule violation
+     */
+    public function toggleStatus(Book $book): Book
+    {
+        if ($book->status === BookStatus::Published) {
+            if ($book->hasAnyPurchases()) {
+                throw new \InvalidArgumentException('Нельзя снять с публикации книгу, у которой есть покупки.');
+            }
+            $book->status = BookStatus::Draft;
+        } else {
+            if ($book->epub_path === null) {
+                throw new \InvalidArgumentException('Нельзя опубликовать книгу без файла epub.');
+            }
+            $book->status = BookStatus::Published;
+        }
+
+        $book->save();
+
+        return $book;
+    }
+
+    /**
+     * Toggle the book's featured flag.
+     */
+    public function toggleFeatured(Book $book): Book
+    {
+        $book->is_featured = ! $book->is_featured;
+        $book->save();
+
+        return $book;
+    }
+
+    /**
+     * Delete a book and its associated files.
+     *
+     * Caller must verify BookPolicy::delete() before calling this method.
+     */
+    public function deleteBook(Book $book): void
+    {
+        $this->fileService->deleteCover($book);
+        $this->fileService->deleteEpub($book);
+
+        $book->delete();
     }
 }

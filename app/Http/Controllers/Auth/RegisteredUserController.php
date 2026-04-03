@@ -30,6 +30,8 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
+        session()->put('_guest_cart_session_id', session()->getId());
+
         Auth::login($user);
         $request->session()->regenerate();
 

@@ -73,6 +73,8 @@ class OAuthController extends Controller
             abort(500);
         }
 
+        session()->put('_guest_cart_session_id', session()->getId());
+
         Auth::login($result['user']);
         session()->regenerate();
 
@@ -97,6 +99,8 @@ class OAuthController extends Controller
         $pending = session()->get('oauth_pending');
 
         $user = $this->oauthService->completeRegistration($request->validated('email'), $pending);
+
+        session()->put('_guest_cart_session_id', session()->getId());
 
         Auth::login($user);
         session()->regenerate();

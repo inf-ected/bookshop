@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\User;
 use Stripe\Checkout\Session;
+use Stripe\Exception\ApiErrorException;
 use Stripe\Stripe;
 
 class StripePaymentProvider implements PaymentProvider
@@ -22,6 +23,7 @@ class StripePaymentProvider implements PaymentProvider
      * Create a Stripe Checkout session for the given order.
      *
      * @return array{id: string, url: string}
+     * @throws ApiErrorException
      */
     public function createSession(Order $order, User $user): array
     {

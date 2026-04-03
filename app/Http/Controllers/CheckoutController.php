@@ -77,7 +77,6 @@ class CheckoutController extends Controller
 
             // Rule 33: if already paid, redirect to library
             if ($order && $order->status === OrderStatus::Paid) {
-                // TODO: update to route('cabinet.library') once Phase 6 adds the route
                 return redirect()->to('/cabinet/library')
                     ->with('success', 'Оплата прошла успешно! Книги добавлены в вашу библиотеку.');
             }

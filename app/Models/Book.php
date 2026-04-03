@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\Storage;
  * @property int $price
  * @property-read string|null $cover_url
  * @property-read string|null $cover_thumb_url
+ * @property string $epub_path
+ * @property int $id
  */
 class Book extends Model
 {

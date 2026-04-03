@@ -23,6 +23,7 @@ class StripePaymentProvider implements PaymentProvider
      * Create a Stripe Checkout session for the given order.
      *
      * @return array{id: string, url: string}
+     *
      * @throws ApiErrorException
      */
     public function createSession(Order $order, User $user): array

@@ -39,3 +39,8 @@ docker-compose.override.yml
 
 # Playwright MCP screenshots
 .playwright-mcp/
+
+# IDE helper (generated, machine-specific)
+_ide_helper.php
+_ide_helper_models.php
+.phpstorm.meta.php

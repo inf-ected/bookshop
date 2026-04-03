@@ -19,6 +19,7 @@
         "stripe/stripe-php": "^20.0"
     },
     "require-dev": {
+        "barryvdh/laravel-ide-helper": "^3.7",
         "ekino/phpstan-banned-code": "^3.0",
         "fakerphp/faker": "^1.23",
         "laravel/boost": "^2.3",

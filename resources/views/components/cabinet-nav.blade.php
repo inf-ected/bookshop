@@ -5,6 +5,7 @@
 <nav class="border-b border-border-subtle mb-8">
     <div class="flex gap-0 overflow-x-auto">
 
+        @unless(auth()->user()?->isAdmin())
         <a
             href="{{ route('cabinet.library') }}"
             class="shrink-0 px-5 py-3 text-sm font-sans border-b-2 transition
@@ -24,6 +25,7 @@
         >
             Заказы
         </a>
+        @endunless
 
         <a
             href="{{ route('cabinet.settings') }}"

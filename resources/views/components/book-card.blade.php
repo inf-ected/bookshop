@@ -38,27 +38,29 @@
                 {{ number_format($book->price / 100, 0, ',', ' ') }}&nbsp;₽
             </span>
 
-            @if($isOwned)
-                {{-- State: already in library --}}
-                <a
-                    href="{{ url('/cabinet/library') }}"
-                    class="px-3 py-1.5 text-xs font-sans rounded border border-success-border text-success bg-success-light hover:bg-success-light transition"
-                >
-                    В библиотеке
-                </a>
-            @else
-                {{-- Default state: add to cart --}}
-                <form method="POST" action="{{ route('cart.store', $book) }}">
-                    @csrf
-                    <button
-                        type="submit"
-                        class="px-3 py-1.5 text-xs font-sans rounded border border-brand-700 text-brand-700 hover:bg-brand-50 transition"
-                        title="Добавить в корзину"
+            @unless(auth()->user()?->isAdmin())
+                @if($isOwned)
+                    {{-- State: already in library --}}
+                    <a
+                        href="{{ url('/cabinet/library') }}"
+                        class="px-3 py-1.5 text-xs font-sans rounded border border-success-border text-success bg-success-light hover:bg-success-light transition"
                     >
-                        В корзину
-                    </button>
-                </form>
-            @endif
+                        В библиотеке
+                    </a>
+                @else
+                    {{-- Default state: add to cart --}}
+                    <form method="POST" action="{{ route('cart.store', $book) }}">
+                        @csrf
+                        <button
+                            type="submit"
+                            class="px-3 py-1.5 text-xs font-sans rounded border border-brand-700 text-brand-700 hover:bg-brand-50 transition"
+                            title="Добавить в корзину"
+                        >
+                            В корзину
+                        </button>
+                    </form>
+                @endif
+            @endunless
         </div>
     </div>
 

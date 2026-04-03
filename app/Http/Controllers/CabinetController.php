@@ -12,20 +12,31 @@ use Illuminate\View\View;
 class CabinetController extends Controller
 {
     /**
-     * Redirect to library (Rule 42).
+     * Redirect to library, or to admin dashboard for admins (Rule 42).
      */
-    public function index(): RedirectResponse
+    public function index(Request $request): RedirectResponse
     {
+        /** @var User $user */
+        $user = $request->user();
+
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
+
         return redirect()->route('cabinet.library');
     }
 
     /**
-     * Show owned books (Rule 43).
+     * Show owned books (Rule 43). Admins are redirected — they cannot own books.
      */
-    public function library(Request $request): View
+    public function library(Request $request): View|RedirectResponse
     {
         /** @var User $user */
         $user = $request->user();
+
+        if ($user->isAdmin()) {
+            return redirect()->route('cabinet.settings');
+        }
 
         $userBooks = $user->userBooks()
             ->with('book')
@@ -37,11 +48,16 @@ class CabinetController extends Controller
 
     /**
      * Show order history paginated 10/page, created_at DESC (Rule 44).
+     * Admins are redirected — they do not place orders.
      */
-    public function orders(Request $request): View
+    public function orders(Request $request): View|RedirectResponse
     {
         /** @var User $user */
         $user = $request->user();
+
+        if ($user->isAdmin()) {
+            return redirect()->route('cabinet.settings');
+        }
 
         $orders = $user->orders()
             ->with('items.book')

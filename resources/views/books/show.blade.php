@@ -45,26 +45,28 @@
                     {{ number_format($book->price / 100, 0, ',', ' ') }}&nbsp;₽
                 </span>
 
-                {{-- Cart / library CTA --}}
+                {{-- Cart / library CTA — hidden for admins --}}
                 @auth
-                    @if($isOwned)
-                        <a
-                            href="{{ url('/cabinet/library') }}"
-                            class="px-6 py-2.5 border border-success-border text-success bg-success-light rounded font-sans text-sm font-semibold"
-                        >
-                            В библиотеке
-                        </a>
-                    @else
-                        <form method="POST" action="{{ route('cart.store', $book) }}">
-                            @csrf
-                            <button
-                                type="submit"
-                                class="px-6 py-2.5 bg-brand-700 text-white rounded font-sans text-sm hover:bg-brand-800 transition font-semibold"
+                    @unless(auth()->user()->isAdmin())
+                        @if($isOwned)
+                            <a
+                                href="{{ url('/cabinet/library') }}"
+                                class="px-6 py-2.5 border border-success-border text-success bg-success-light rounded font-sans text-sm font-semibold"
                             >
-                                В корзину
-                            </button>
-                        </form>
-                    @endif
+                                В библиотеке
+                            </a>
+                        @else
+                            <form method="POST" action="{{ route('cart.store', $book) }}">
+                                @csrf
+                                <button
+                                    type="submit"
+                                    class="px-6 py-2.5 bg-brand-700 text-white rounded font-sans text-sm hover:bg-brand-800 transition font-semibold"
+                                >
+                                    В корзину
+                                </button>
+                            </form>
+                        @endif
+                    @endunless
                 @else
                     <a
                         href="{{ route('login') }}"

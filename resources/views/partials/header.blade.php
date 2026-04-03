@@ -10,7 +10,8 @@
         <nav class="hidden md:flex items-center gap-6 text-sm font-sans">
             <a href="{{ route('books.index') }}" class="hover:text-brand-200 transition">Книги</a>
 
-            {{-- Cart icon with badge --}}
+            {{-- Cart icon with badge — hidden for admins --}}
+            @unless(auth()->user()?->isAdmin())
             <a href="{{ route('cart.index') }}" class="relative hover:text-brand-200 transition" aria-label="Корзина">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -22,12 +23,13 @@
                     </span>
                 @endif
             </a>
+            @endunless
 
             @auth
                 @if(auth()->user()->role === \App\Enums\UserRole::Admin)
                     <a href="{{ route('admin.dashboard') }}" class="hover:text-brand-200 transition">Админ</a>
                 @endif
-                <a href="{{ route('cabinet.index') }}" class="hover:text-brand-200 transition">Личный кабинет</a>
+                <a href="{{ auth()->user()->isAdmin() ? route('cabinet.settings') : route('cabinet.index') }}" class="hover:text-brand-200 transition">Личный кабинет</a>
                 <form method="POST" action="{{ route('logout') }}" class="inline">
                     @csrf
                     <button type="submit" class="hover:text-brand-200 transition">
@@ -74,6 +76,7 @@
                     <a href="{{ route('books.index') }}" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition">
                         Книги
                     </a>
+                    @unless(auth()->user()?->isAdmin())
                     <a href="{{ route('cart.index') }}" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition flex items-center justify-between">
                         Корзина
                         @if($cartCount > 0)
@@ -82,13 +85,14 @@
                             </span>
                         @endif
                     </a>
+                    @endunless
                     @auth
                         @if(auth()->user()->role === \App\Enums\UserRole::Admin)
                             <a href="{{ route('admin.dashboard') }}" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition">
                                 Админ
                             </a>
                         @endif
-                        <a href="{{ route('cabinet.index') }}" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition">
+                        <a href="{{ auth()->user()->isAdmin() ? route('cabinet.settings') : route('cabinet.index') }}" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition">
                             Личный кабинет
                         </a>
                         <form method="POST" action="{{ route('logout') }}">

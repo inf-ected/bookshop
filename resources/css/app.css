@@ -45,3 +45,8 @@
 }
 
 [x-cloak] { display: none !important; }
+
+.no-select {
+    user-select: none;
+    -webkit-user-select: none;
+}

@@ -30,7 +30,7 @@ class SitemapTest extends TestCase
 
     public function test_published_book_appears_in_sitemap(): void
     {
-        $book = Book::factory()->published()->create(['slug' => 'my-published-book']);
+        Book::factory()->published()->create(['slug' => 'my-published-book']);
 
         $response = $this->get('/sitemap.xml');
 
@@ -40,7 +40,7 @@ class SitemapTest extends TestCase
 
     public function test_draft_book_does_not_appear_in_sitemap(): void
     {
-        $book = Book::factory()->create(['slug' => 'my-draft-book']);
+        Book::factory()->create(['slug' => 'my-draft-book']);
 
         $response = $this->get('/sitemap.xml');
 
@@ -50,7 +50,7 @@ class SitemapTest extends TestCase
 
     public function test_published_post_appears_in_sitemap(): void
     {
-        $post = Post::factory()->published()->create(['slug' => 'my-published-post']);
+        Post::factory()->published()->create(['slug' => 'my-published-post']);
 
         $response = $this->get('/sitemap.xml');
 
@@ -68,6 +68,24 @@ class SitemapTest extends TestCase
         $response->assertDontSee('my-draft-post', escape: false);
     }
 
+    public function test_sitemap_is_cached_after_first_request(): void
+    {
+        $this->assertFalse(Cache::has('sitemap.xml'));
+
+        $this->get('/sitemap.xml');
+
+        $this->assertTrue(Cache::has('sitemap.xml'));
+    }
+
+    public function test_generate_sitemap_command_populates_cache(): void
+    {
+        $this->assertFalse(Cache::has('sitemap.xml'));
+
+        $this->artisan('app:generate-sitemap')->assertSuccessful();
+
+        $this->assertTrue(Cache::has('sitemap.xml'));
+    }
+
     public function test_robots_txt_returns_200_with_plain_text(): void
     {
         $response = $this->get('/robots.txt');
@@ -78,6 +96,8 @@ class SitemapTest extends TestCase
         $response->assertSee('Disallow: /cabinet', escape: false);
         $response->assertSee('Disallow: /checkout', escape: false);
         $response->assertSee('Disallow: /cart', escape: false);
+        $response->assertSee('Disallow: /auth/', escape: false);
+        $response->assertSee('Disallow: /webhooks/', escape: false);
         $response->assertSee('Sitemap:', escape: false);
     }
 }

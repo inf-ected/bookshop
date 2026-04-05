@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Pages\Commands;
 
-use App\Features\Pages\Controllers\SitemapController;
+use App\Features\Pages\Services\SitemapService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 
@@ -14,11 +14,11 @@ class GenerateSitemapCommand extends Command
 
     protected $description = 'Generate and cache the sitemap.xml';
 
-    public function handle(SitemapController $controller): int
+    public function handle(SitemapService $sitemapService): int
     {
         Cache::forget('sitemap.xml');
 
-        $xml = $controller->buildSitemap()->render();
+        $xml = $sitemapService->build()->render();
 
         Cache::put('sitemap.xml', $xml, now()->addHours(24));
 

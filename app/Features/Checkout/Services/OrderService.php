@@ -57,4 +57,15 @@ class OrderService
             return $order;
         });
     }
+
+    public function findByStripeSession(string $stripeSessionId, ?int $userId = null): ?Order
+    {
+        $query = Order::query()->where('stripe_session_id', $stripeSessionId);
+
+        if ($userId !== null) {
+            $query->where('user_id', $userId);
+        }
+
+        return $query->first();
+    }
 }

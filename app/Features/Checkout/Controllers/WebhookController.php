@@ -6,8 +6,8 @@ namespace App\Features\Checkout\Controllers;
 
 use App\Enums\OrderStatus;
 use App\Features\Checkout\Jobs\ProcessPaymentConfirmation;
+use App\Features\Checkout\Services\OrderService;
 use App\Http\Controllers\Controller;
-use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -17,6 +17,8 @@ use Stripe\Webhook;
 
 class WebhookController extends Controller
 {
+    public function __construct(private readonly OrderService $orderService) {}
+
     /**
      * Handle Stripe webhook events.
      *
@@ -63,9 +65,7 @@ class WebhookController extends Controller
                 : (string) ($session->payment_intent->id ?? '');
 
             // Rule 30: look up order by stripe_session_id for idempotency
-            $order = Order::query()
-                ->where('stripe_session_id', $stripeSessionId)
-                ->first();
+            $order = $this->orderService->findByStripeSession($stripeSessionId);
 
             if ($order === null) {
                 Log::warning('Stripe webhook: order not found for session', [

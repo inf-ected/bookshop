@@ -20,7 +20,7 @@ class BookController extends Controller
 
     public function index(): View
     {
-        $books = Book::query()->ordered()->paginate(15);
+        $books = $this->bookAdminService->listBooks();
 
         return view('admin.books.index', compact('books'));
     }

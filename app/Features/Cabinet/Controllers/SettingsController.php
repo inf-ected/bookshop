@@ -6,11 +6,11 @@ namespace App\Features\Cabinet\Controllers;
 
 use App\Enums\OauthProvider;
 use App\Features\Auth\Services\OAuthService;
+use App\Features\Cabinet\Notifications\PasswordChangedNotification;
 use App\Features\Cabinet\Requests\UpdatePasswordRequest;
 use App\Features\Cabinet\Requests\UpdateProfileRequest;
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Features\Cabinet\Notifications\PasswordChangedNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;

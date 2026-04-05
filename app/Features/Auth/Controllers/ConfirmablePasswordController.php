@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
+// TODO: Apply middleware('password.confirm') to sensitive routes when implemented:
+//   - DELETE /cabinet/account       — account deletion
+//   - DELETE /settings/oauth/{provider} — unlinking last OAuth provider
+//   - Future analytics/admin actions requiring re-auth
+// Routes and views are ready; just add ->middleware('password.confirm') to the route definition.
 class ConfirmablePasswordController extends Controller
 {
     /**

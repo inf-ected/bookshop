@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Features\Admin\Controllers\BookController as AdminBookController;
 use App\Features\Admin\Controllers\DashboardController;
 use App\Features\Auth\Controllers\OAuthController;
+use App\Features\Blog\Controllers\PostController;
 use App\Features\Cabinet\Controllers\CabinetController;
 use App\Features\Cabinet\Controllers\SettingsController;
 use App\Features\Cart\Controllers\CartController;
@@ -17,6 +18,11 @@ use App\Features\Pages\Controllers\StaticPageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// Blog
+Route::get('/blog', [PostController::class, 'index'])->name('blog.index');
+Route::get('/blog/{post:slug}', [PostController::class, 'show'])->name('blog.show');
+
 Route::get('/books', [BookController::class, 'index'])->name('books.index');
 Route::get('/books/{book:slug}', [BookController::class, 'show'])->name('books.show');
 Route::get('/books/{book:slug}/fragment', [BookController::class, 'fragment'])->name('books.fragment');

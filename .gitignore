@@ -19,6 +19,9 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/htmlpurifier/HTML/
+/storage/htmlpurifier/URI/
+/storage/htmlpurifier/CSS/
 /vendor
 Homestead.json
 Homestead.yaml

@@ -574,20 +574,45 @@ Blade views for all cabinet pages. Backend must be complete first.
 
 No new tables.
 
+### Implementation Sub-phases
+
+Phase 9 is split into 2 sessions.
+
+**9.1 — Meta Tags + OpenGraph + JSON-LD** *(frontend)*
+
+- Shared Blade component `<x-seo>` — accepts title, description, canonical, og:image
+- Meta title + description on all public pages (home, catalog, book detail, fragment, blog index, blog post, static pages)
+- OpenGraph tags: `og:title`, `og:description`, `og:image`, `og:url`, `og:type` on book pages, blog posts, homepage
+- Twitter Card tags on book pages and blog posts
+- Canonical URL tag on all public pages
+- JSON-LD structured data (Product schema) on book detail pages
+- No new PHP classes — frontend only
+
+**9.2 — Sitemap + robots.txt** *(backend)*
+
+- Install `spatie/laravel-sitemap`
+- `SitemapController@index` — generates sitemap XML with published books and posts
+- `BookObserver` — regenerate sitemap cache when book status changes to/from published
+- `PostObserver` — regenerate sitemap cache when post status changes to/from published
+- `GenerateSitemapCommand` — Artisan command `app:generate-sitemap` to rebuild sitemap manually
+- `robots.txt` served as static file: `Disallow: /admin`, `/cabinet`, `/checkout`
+- Route: `GET /sitemap.xml` → SitemapController@index
+
 ### Routes
 
 | Method | URI | Controller@method | Middleware |
 |--------|-----|-------------------|------------|
 | GET | `/sitemap.xml` | SitemapController@index | web |
-| GET | `/robots.txt` | — (served as static file or via route) | — |
+| GET | `/robots.txt` | — (static file in `public/`) | — |
 
 ### Classes
 
 | Type | Name | Responsibility |
 |------|------|----------------|
+| Component | `resources/views/components/seo.blade.php` | Shared meta/OG/Twitter/canonical tags — accepts title, description, canonical, og_image |
 | Controller | SitemapController | Generate sitemap XML with published books and posts |
-| Observer | BookObserver (extended) | Regenerate sitemap cache when book status changes |
-| Observer | PostObserver (extended) | Regenerate sitemap cache when post status changes |
+| Observer | BookObserver | Regenerate sitemap cache when book status changes |
+| Observer | PostObserver | Regenerate sitemap cache when post status changes |
 | Command | GenerateSitemapCommand | Artisan command `app:generate-sitemap` to rebuild sitemap |
 
 ---

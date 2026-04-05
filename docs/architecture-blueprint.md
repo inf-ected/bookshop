@@ -619,25 +619,13 @@ Phase 9 is split into 2 sessions.
 
 ## Phase 10 — Analytics (Google Analytics 4)
 
+> **Implemented as part of Phase 11.5 (Frontend).** No separate phase or PR needed.
+
 No backend code, no database schema. Analytics is handled entirely by Google Analytics 4 via client-side script tags and `gtag()` calls.
 
-### Implementation
+**Global script** — added once to `resources/views/layouts/app.blade.php` in `<head>`. GA Measurement ID stored in `.env` as `GOOGLE_ANALYTICS_ID`, exposed via `config/services.php`. Script is skipped when ID is empty (local/test environments).
 
-**Global script** — added once to `resources/views/layouts/app.blade.php` in `<head>`:
-
-```html
-<script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.google_analytics.id') }}"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', '{{ config('services.google_analytics.id') }}');
-</script>
-```
-
-GA Measurement ID is stored in `.env` as `GOOGLE_ANALYTICS_ID` and exposed via `config/services.php`. The script is only rendered when the ID is set (skipped in local/test environments).
-
-**Custom events** — added via `@push('scripts')` or inline Alpine.js in relevant Blade views:
+**Custom events:**
 
 | Event | Where | Trigger |
 |-------|-------|---------|
@@ -646,11 +634,7 @@ GA Measurement ID is stored in `.env` as `GOOGLE_ANALYTICS_ID` and exposed via `
 | `purchase` | `checkout/success.blade.php` | On page load when order is paid |
 | `file_download` | `cabinet/library.blade.php` | Download button click |
 
-### No backend changes
-
-- No migration, model, controller, job, or service needed.
-- Page views, sessions, traffic sources, funnels, and top pages are tracked automatically by GA4.
-- Ecommerce funnel (detail → cart → checkout → purchase) is built in GA4 reports using the standard events above.
+Page views, sessions, funnels, and top-content reports provided by GA4 out of the box. GA4 account and Measurement ID are configured when deploying to production (domain required).
 
 ---
 
@@ -1032,11 +1016,11 @@ Note: Laravel's default migrations (users, password_reset_tokens, sessions, cach
 
 ### Phase 10 — Analytics
 
-59. Analytics uses Google Analytics 4 — no backend tables, controllers, or jobs.
-60. GA Measurement ID is stored in `.env` as `GOOGLE_ANALYTICS_ID` and read via `config/services.php`. Script is not rendered when the value is empty (local/test environments).
-61. Standard GA4 events tracked: `add_to_cart`, `begin_checkout`, `purchase`, `file_download`.
-62. Page views, sessions, funnels, and top-content reports are provided by GA4 out of the box.
-63. No personal data is sent to GA4 beyond what the default gtag configuration collects.
+59. Analytics uses Google Analytics 4 — implemented as part of Phase 11.5, no separate phase.
+60. GA Measurement ID stored in `.env` as `GOOGLE_ANALYTICS_ID`; script omitted when value is empty.
+61. Standard GA4 events: `add_to_cart`, `begin_checkout`, `purchase`, `file_download`.
+62. Page views, sessions, funnels provided by GA4 out of the box — no custom aggregation needed.
+63. GA4 account and Measurement ID configured at production deploy time (domain required).
 
 ### Phase 11 — Admin Blog, Users & Orders
 

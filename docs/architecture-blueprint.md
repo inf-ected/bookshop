@@ -2,7 +2,27 @@
 
 **Project**: Single-author Russian-language digital bookshop
 **Stack**: Laravel 12, PHP 8.4, MySQL 8, Redis, Docker, S3, Stripe
-**Last updated**: 2026-03-18
+**Last updated**: 2026-04-03
+
+---
+
+## Application Structure
+
+All application code is organized into **feature slices** under `app/Features/`. Each feature owns its controllers, services, requests, jobs, events, listeners, and mail:
+
+| Feature | Namespace prefix | Responsibility |
+|---------|-----------------|----------------|
+| `Admin` | `App\Features\Admin` | Book management, admin dashboard |
+| `Auth` | `App\Features\Auth` | Login, registration, OAuth, password |
+| `Cabinet` | `App\Features\Cabinet` | User profile, library, orders views |
+| `Cart` | `App\Features\Cart` | Guest/auth cart, merge on login |
+| `Catalog` | `App\Features\Catalog` | Public book catalog and pages |
+| `Checkout` | `App\Features\Checkout` | Orders, Stripe, webhooks, email |
+| `Download` | `App\Features\Download` | Epub download via pre-signed S3 URL |
+
+**Shared code** (Models, Policies, Enums, Providers) stays in `app/` root — these are not feature-specific.
+
+New features should follow the same slice pattern: `app/Features/{FeatureName}/{Controllers|Services|Requests|...}/`.
 
 ---
 

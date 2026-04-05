@@ -156,15 +156,57 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 });
 ```
 
+### Directory Structure — Feature-based
+
+All application code lives under `app/Features/{Feature}/`. Each feature owns its own controllers, services, requests, jobs, events, listeners, and mail classes:
+
+```
+app/Features/
+├── Admin/
+│   ├── Controllers/
+│   ├── Jobs/
+│   ├── Requests/
+│   └── Services/
+├── Auth/
+│   ├── Controllers/
+│   ├── Requests/
+│   └── Services/
+├── Cabinet/
+│   ├── Controllers/
+│   └── Requests/
+├── Cart/
+│   ├── Controllers/
+│   ├── Exceptions/
+│   ├── Listeners/
+│   └── Services/
+├── Catalog/
+│   └── Controllers/
+├── Checkout/
+│   ├── Contracts/
+│   ├── Controllers/
+│   ├── Events/
+│   ├── Jobs/
+│   ├── Listeners/
+│   ├── Mail/
+│   └── Services/
+└── Download/
+    ├── Controllers/
+    └── Services/
+```
+
+Shared, cross-feature code (Models, Policies, Enums, Providers) stays in `app/` root as usual.
+
+Namespace convention: `App\Features\{Feature}\{Type}\{ClassName}` — e.g. `App\Features\Cart\Services\CartService`.
+
 ### Services
 
-Business logic lives in service classes under `app/Services/`. Constructor-injected into controllers.
+Business logic lives in service classes under `app/Features/{Feature}/Services/`. Constructor-injected into controllers.
 
 ### Jobs / Events
 
-- epub upload: `ProcessBookFileUpload` job (queued — never block HTTP for S3 upload)
-- Payment confirmation: `ProcessPaymentConfirmation` job
-- `OrderPaid` event → `SendOrderConfirmationEmail` listener (queued)
+- epub upload: `App\Features\Admin\Jobs\ProcessBookFileUpload` (queued — never block HTTP for S3 upload)
+- Payment confirmation: `App\Features\Checkout\Jobs\ProcessPaymentConfirmation`
+- `App\Features\Checkout\Events\OrderPaid` → `App\Features\Checkout\Listeners\SendOrderConfirmationEmail` (queued)
 
 ### S3 Disks
 

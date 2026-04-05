@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Features\Catalog\Controllers;
+namespace App\Features\Pages\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\View\View;

@@ -10,7 +10,7 @@ use App\Features\Cabinet\Controllers\SettingsController;
 use App\Features\Cart\Controllers\CartController;
 use App\Features\Catalog\Controllers\BookController;
 use App\Features\Catalog\Controllers\HomeController;
-use App\Features\Catalog\Controllers\StaticPageController;
+use App\Features\Pages\Controllers\StaticPageController;
 use App\Features\Checkout\Controllers\CheckoutController;
 use App\Features\Checkout\Controllers\WebhookController;
 use App\Features\Download\Controllers\DownloadController;

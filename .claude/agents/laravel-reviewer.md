@@ -24,7 +24,7 @@ Every review covers all four dimensions. Do not skip any.
 ### 1. PHP Code Quality
 - Laravel 12 / PHP 8.4 idioms and conventions
 - Controller thinness — no business logic in controllers
-- Service layer usage — logic in `app/Services/`, not inline
+- Service layer usage — logic in `app/Features/{Feature}/Services/`, not inline
 - Proper use of Form Requests for all POST/PUT
 - Enum usage and model casts
 - No raw SQL — Eloquent only unless genuinely necessary

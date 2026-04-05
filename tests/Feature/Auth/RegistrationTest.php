@@ -4,13 +4,24 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Auth;
 
+use App\Features\Newsletter\Services\NewsletterService;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Mockery\MockInterface;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->mock(NewsletterService::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('addContact')->byDefault();
+        });
+    }
 
     public function test_registration_screen_can_be_rendered(): void
     {

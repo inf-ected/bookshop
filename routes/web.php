@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Features\Admin\Controllers\BookController as AdminBookController;
 use App\Features\Admin\Controllers\DashboardController;
 use App\Features\Admin\Controllers\DownloadLogController as AdminDownloadLogController;
+use App\Features\Admin\Controllers\NewsletterController as AdminNewsletterController;
 use App\Features\Admin\Controllers\OrderController as AdminOrderController;
 use App\Features\Admin\Controllers\PostController as AdminPostController;
 use App\Features\Admin\Controllers\UserBookController as AdminUserBookController;
@@ -19,6 +20,7 @@ use App\Features\Catalog\Controllers\HomeController;
 use App\Features\Checkout\Controllers\CheckoutController;
 use App\Features\Checkout\Controllers\WebhookController;
 use App\Features\Download\Controllers\DownloadController;
+use App\Features\Newsletter\Controllers\NewsletterController;
 use App\Features\Pages\Controllers\SitemapController;
 use App\Features\Pages\Controllers\StaticPageController;
 use Illuminate\Support\Facades\Route;
@@ -54,6 +56,11 @@ foreach ($staticPages as $page) {
         ->name("static.{$page}")
         ->defaults('page', $page);
 }
+
+// Newsletter subscription (public, rate limited)
+Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])
+    ->middleware('throttle:5,1')
+    ->name('newsletter.subscribe');
 
 // Cart routes (guests and authenticated users)
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
@@ -141,6 +148,10 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
 
     // Download logs
     Route::get('/download-logs', [AdminDownloadLogController::class, 'index'])->name('download-logs.index');
+
+    // Newsletter
+    Route::get('/newsletter', [AdminNewsletterController::class, 'index'])->name('newsletter.index');
+    Route::post('/newsletter/send', [AdminNewsletterController::class, 'send'])->name('newsletter.send');
 });
 
 require __DIR__.'/auth.php';

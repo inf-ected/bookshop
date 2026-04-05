@@ -1,5 +1,10 @@
 @extends('layouts.app')
 
+<x-seo
+    title="Блог"
+    description="Статьи, новости и обзоры от Книжной лавки."
+/>
+
 @section('content')
 
 <div class="max-w-5xl mx-auto px-4 py-10">

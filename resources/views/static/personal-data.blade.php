@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+<x-seo title="Политика обработки персональных данных" />
+
 @section('content')
 
 <div class="max-w-3xl mx-auto px-4 py-12">

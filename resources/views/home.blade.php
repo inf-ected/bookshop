@@ -1,5 +1,11 @@
 @extends('layouts.app')
 
+<x-seo
+    title="Книжная лавка"
+    description="Качественная литература в цифровом формате — читайте где угодно, когда угодно. Мгновенный доступ после оплаты."
+    og-type="website"
+/>
+
 @section('content')
 
 {{-- Hero banner --}}

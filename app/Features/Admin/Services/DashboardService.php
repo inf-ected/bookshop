@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Admin\Services;
 
 use App\Enums\BookStatus;
-use Illuminate\Support\Facades\DB;
+use App\Models\Book;
 
 class DashboardService
 {
@@ -14,7 +14,7 @@ class DashboardService
      */
     public function getStats(): array
     {
-        $row = DB::table('books')
+        $row = Book::query()
             ->selectRaw('COUNT(*) as total_books')
             ->selectRaw('SUM(status = ?) as published_books', [BookStatus::Published->value])
             ->selectRaw('SUM(status = ?) as draft_books', [BookStatus::Draft->value])

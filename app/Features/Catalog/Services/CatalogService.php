@@ -42,6 +42,11 @@ class CatalogService
         return $user->userBooks()->pluck('book_id');
     }
 
+    /**
+     * Check if a single book is owned by the user.
+     *
+     * For iterating a list of books, use getOwnedBookIds() instead to avoid N+1 queries.
+     */
     public function isOwnedByUser(Book $book, User $user): bool
     {
         return $user->userBooks()->where('book_id', $book->id)->exists();

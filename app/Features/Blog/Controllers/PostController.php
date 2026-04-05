@@ -4,20 +4,18 @@ declare(strict_types=1);
 
 namespace App\Features\Blog\Controllers;
 
+use App\Features\Blog\Services\PostService;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
 
 class PostController extends Controller
 {
+    public function __construct(private readonly PostService $postService) {}
+
     public function index(): View
     {
-        /** @var LengthAwarePaginator<int, Post> $posts */
-        $posts = Post::query()
-            ->published()
-            ->orderBy('published_at', 'desc')
-            ->paginate(10);
+        $posts = $this->postService->listPublished();
 
         return view('blog.index', compact('posts'));
     }

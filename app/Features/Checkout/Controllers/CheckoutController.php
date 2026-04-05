@@ -71,14 +71,11 @@ class CheckoutController extends Controller
         $stripeSessionId = $request->query('session_id');
 
         if ($stripeSessionId) {
-            $order = Order::query()
-                ->where('stripe_session_id', $stripeSessionId)
-                ->where('user_id', $request->user()->id)
-                ->first();
+            $order = $this->orderService->findByStripeSession($stripeSessionId, $request->user()->id);
 
             // Rule 33: if already paid, redirect to library
             if ($order && $order->status === OrderStatus::Paid) {
-                return redirect()->to('/cabinet/library')
+                return redirect()->route('cabinet.library')
                     ->with('success', 'Оплата прошла успешно! Книги добавлены в вашу библиотеку.');
             }
 

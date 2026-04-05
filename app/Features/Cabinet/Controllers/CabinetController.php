@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Cabinet\Controllers;
 
+use App\Features\Cabinet\Services\CabinetService;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -12,6 +13,8 @@ use Illuminate\View\View;
 
 class CabinetController extends Controller
 {
+    public function __construct(private readonly CabinetService $cabinetService) {}
+
     /**
      * Redirect to library, or to admin dashboard for admins (Rule 42).
      */
@@ -39,10 +42,7 @@ class CabinetController extends Controller
             return redirect()->route('cabinet.settings');
         }
 
-        $userBooks = $user->userBooks()
-            ->with('book')
-            ->latest()
-            ->get();
+        $userBooks = $this->cabinetService->getUserBooks($user);
 
         return view('cabinet.library', compact('userBooks'));
     }
@@ -60,10 +60,7 @@ class CabinetController extends Controller
             return redirect()->route('cabinet.settings');
         }
 
-        $orders = $user->orders()
-            ->with('items.book')
-            ->latest()
-            ->paginate(10);
+        $orders = $this->cabinetService->getUserOrders($user);
 
         return view('cabinet.orders', compact('orders'));
     }

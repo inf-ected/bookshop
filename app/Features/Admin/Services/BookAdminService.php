@@ -7,6 +7,7 @@ namespace App\Features\Admin\Services;
 use App\Enums\BookStatus;
 use App\Features\Admin\Jobs\ProcessBookFileUpload;
 use App\Models\Book;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -182,5 +183,13 @@ class BookAdminService
         $this->fileService->deleteEpub($book);
 
         $book->delete();
+    }
+
+    /**
+     * @return LengthAwarePaginator<int, Book>
+     */
+    public function listBooks(int $perPage = 15): LengthAwarePaginator
+    {
+        return Book::query()->ordered()->paginate($perPage);
     }
 }

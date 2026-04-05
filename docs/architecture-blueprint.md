@@ -654,105 +654,171 @@ GA Measurement ID is stored in `.env` as `GOOGLE_ANALYTICS_ID` and exposed via `
 
 ---
 
-## Phase 11 — Admin Panel — Blog & Storefront
+## Phase 11 — Admin Panel — Blog, Users & Orders
 
-### Schema
+### Schema changes
 
-**NewsletterSubscriber** (`newsletter_subscribers`)
-
-| Column | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| `id` | UNSIGNED BIGINT AUTO_INCREMENT | NO | — | PK |
-| `email` | VARCHAR(255) | NO | — | Subscriber email |
-| `confirmed_at` | TIMESTAMP | YES | NULL | Double opt-in confirmation timestamp |
-| `unsubscribed_at` | TIMESTAMP | YES | NULL | Unsubscribe timestamp |
-| `token` | VARCHAR(64) | NO | — | Unique token for confirm/unsubscribe links |
-| `created_at` | TIMESTAMP | YES | NULL | Laravel timestamp |
-| `updated_at` | TIMESTAMP | YES | NULL | Laravel timestamp |
-
-**Indexes:**
-- PRIMARY KEY (`id`)
-- UNIQUE INDEX `newsletter_subscribers_email_unique` (`email`)
-- UNIQUE INDEX `newsletter_subscribers_token_unique` (`token`)
-- INDEX `newsletter_subscribers_confirmed_at_index` (`confirmed_at`)
-
-**Foreign keys:** none
-
-Note: Subscriber emails are collected from the registration opt-in (`newsletter_consent` on users table) and via a standalone subscribe form. Sending is done via SMTP (same mail config as transactional emails) — no 3rd-party API.
-
----
-
-**StaticPage** (`static_pages`)
+**users** — add column:
 
 | Column | Type | Nullable | Default | Notes |
 |--------|------|----------|---------|-------|
-| `id` | UNSIGNED BIGINT AUTO_INCREMENT | NO | — | PK |
-| `slug` | VARCHAR(255) | NO | — | URL slug (matches route, e.g. 'about', 'privacy') |
-| `title` | VARCHAR(255) | NO | — | Page title for display and meta |
-| `body` | LONGTEXT | NO | — | Page HTML/text content |
-| `created_at` | TIMESTAMP | YES | NULL | Laravel timestamp |
-| `updated_at` | TIMESTAMP | YES | NULL | Laravel timestamp |
+| `banned_at` | TIMESTAMP | YES | NULL | Set when admin bans a user; NULL = active |
 
-**Indexes:**
-- PRIMARY KEY (`id`)
-- UNIQUE INDEX `static_pages_slug_unique` (`slug`)
+**user_books** — add column:
 
-**Foreign keys:** none
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| `revoked_at` | TIMESTAMP | YES | NULL | Set when admin revokes access; NULL = active |
+
+Note: `OrderStatus::Refunded` already exists in the enum — no migration needed for orders. Refunded status is set manually by admin after processing the refund in Stripe.
+
+**Newsletter — Resend Audiences (no local table)**
+
+Subscriber management is delegated entirely to **Resend Audiences**. No `newsletter_subscribers` table, no token columns, no batch jobs.
+
+- Resend handles: double opt-in, unsubscribe links, bounce/spam handling, delivery stats
+- Our side: API calls to add/remove contacts from a Resend Audience
+- Audience ID stored in `.env` as `RESEND_AUDIENCE_ID`
+
+Contacts are added to Resend Audience when:
+1. User registers with `newsletter_consent = true`
+2. User submits standalone subscribe form on public pages
+
+Contacts are removed when user unsubscribes via Resend's built-in unsubscribe link (handled by Resend, no route needed on our side).
 
 ### Routes
 
+**Admin — Blog:**
+
 | Method | URI | Controller@method | Middleware |
 |--------|-----|-------------------|------------|
-| GET | `/admin/orders` | Admin\OrderController@index | web, auth, admin |
-| GET | `/admin/orders/{order}` | Admin\OrderController@show | web, auth, admin |
 | GET | `/admin/posts` | Admin\PostController@index | web, auth, admin |
-| GET | `/admin/newsletter` | Admin\NewsletterController@index | web, auth, admin |
-| POST | `/admin/newsletter/send` | Admin\NewsletterController@send | web, auth, admin |
 | GET | `/admin/posts/create` | Admin\PostController@create | web, auth, admin |
 | POST | `/admin/posts` | Admin\PostController@store | web, auth, admin |
 | GET | `/admin/posts/{post}/edit` | Admin\PostController@edit | web, auth, admin |
 | PUT | `/admin/posts/{post}` | Admin\PostController@update | web, auth, admin |
 | DELETE | `/admin/posts/{post}` | Admin\PostController@destroy | web, auth, admin |
 | PATCH | `/admin/posts/{post}/toggle-status` | Admin\PostController@toggleStatus | web, auth, admin |
-| GET | `/admin/pages` | Admin\StaticPageController@index | web, auth, admin |
-| GET | `/admin/pages/{staticPage}/edit` | Admin\StaticPageController@edit | web, auth, admin |
-| PUT | `/admin/pages/{staticPage}` | Admin\StaticPageController@update | web, auth, admin |
 
-Note: Static pages are seeded, not created/deleted via admin. Admin can only edit title and body.
+**Admin — Users:**
 
-Public subscribe/unsubscribe routes (no auth):
+| Method | URI | Controller@method | Middleware |
+|--------|-----|-------------------|------------|
+| GET | `/admin/users` | Admin\UserController@index | web, auth, admin |
+| GET | `/admin/users/{user}` | Admin\UserController@show | web, auth, admin |
+| PATCH | `/admin/users/{user}/ban` | Admin\UserController@ban | web, auth, admin |
+| PATCH | `/admin/users/{user}/unban` | Admin\UserController@unban | web, auth, admin |
+| POST | `/admin/users/{user}/send-password-reset` | Admin\UserController@sendPasswordReset | web, auth, admin |
+| POST | `/admin/users/{user}/verify-email` | Admin\UserController@verifyEmail | web, auth, admin |
+
+**Admin — Orders:**
+
+| Method | URI | Controller@method | Middleware |
+|--------|-----|-------------------|------------|
+| GET | `/admin/orders` | Admin\OrderController@index | web, auth, admin |
+| GET | `/admin/orders/{order}` | Admin\OrderController@show | web, auth, admin |
+| PATCH | `/admin/orders/{order}/refund` | Admin\OrderController@refund | web, auth, admin |
+
+**Admin — User Books (troubleshooting):**
+
+| Method | URI | Controller@method | Middleware |
+|--------|-----|-------------------|------------|
+| PATCH | `/admin/user-books/{userBook}/revoke` | Admin\UserBookController@revoke | web, auth, admin |
+| PATCH | `/admin/user-books/{userBook}/restore` | Admin\UserBookController@restore | web, auth, admin |
+| POST | `/admin/users/{user}/grant-book` | Admin\UserBookController@grant | web, auth, admin |
+
+**Admin — Download Logs:**
+
+| Method | URI | Controller@method | Middleware |
+|--------|-----|-------------------|------------|
+| GET | `/admin/download-logs` | Admin\DownloadLogController@index | web, auth, admin |
+
+**Admin — Newsletter:**
+
+| Method | URI | Controller@method | Middleware |
+|--------|-----|-------------------|------------|
+| GET | `/admin/newsletter` | Admin\NewsletterController@index | web, auth, admin |
+| POST | `/admin/newsletter/send` | Admin\NewsletterController@send | web, auth, admin |
+
+**Public — Newsletter subscribe:**
 
 | Method | URI | Controller@method | Middleware |
 |--------|-----|-------------------|------------|
 | POST | `/newsletter/subscribe` | NewsletterController@subscribe | web, throttle:5,1 |
-| GET | `/newsletter/confirm/{token}` | NewsletterController@confirm | web |
-| GET | `/newsletter/unsubscribe/{token}` | NewsletterController@unsubscribe | web |
+
+Note: Unsubscribe and confirm links are handled by Resend — no local routes needed.
 
 ### Classes
 
 | Type | Name | Responsibility |
 |------|------|----------------|
-| Migration | 2026_03_20_000011_create_newsletter_subscribers_table | Create newsletter_subscribers table |
-| Migration | 2026_03_20_000012_create_static_pages_table | Create static_pages table |
-| Model | NewsletterSubscriber | Eloquent model for newsletter subscribers |
-| Model | StaticPage | Eloquent model for admin-managed static pages |
-| Controller | NewsletterController | Handle public subscribe/confirm/unsubscribe flows |
-| Controller | Admin\OrderController | List all orders and show order detail in admin panel |
-| Controller | Admin\PostController | Full CRUD for blog posts in admin panel. **Must call `HtmlSanitizerService::sanitize()` on `body` before saving (store + update).** |
-| Controller | Admin\StaticPageController | List and edit static pages in admin panel |
-| Controller | Admin\NewsletterController | List subscribers, compose and send newsletter via SMTP |
-| Request | Admin\StorePostRequest | Validate post creation: title, slug, excerpt, body (HTML), cover, status, published_at |
+| Migration | add_banned_at_to_users_table | Add `banned_at` nullable timestamp to users |
+| Migration | add_revoked_at_to_user_books_table | Add `revoked_at` nullable timestamp to user_books |
+| Migration | add_banned_at_to_users_table | Add `banned_at` nullable timestamp to users |
+| Migration | add_revoked_at_to_user_books_table | Add `revoked_at` nullable timestamp to user_books |
+| Controller | Admin\PostController | Full CRUD for blog posts. **Must call `HtmlSanitizerService::sanitize()` on `body` before saving.** |
+| Controller | Admin\UserController | List users, view profile, ban/unban, send password reset, manually verify email |
+| Controller | Admin\OrderController | List all orders, show detail, mark as refunded (triggers UserBook revoke for that order) |
+| Controller | Admin\UserBookController | Grant/revoke/restore user book access for troubleshooting |
+| Controller | Admin\DownloadLogController | List download logs with filter by user and book |
+| Controller | Admin\NewsletterController | Show Resend Audience subscriber count; compose and send newsletter via Resend Broadcasts API |
+| Controller | NewsletterController | Add contact to Resend Audience on public subscribe form submit |
+| Request | Admin\StorePostRequest | Validate post creation: title, slug, excerpt, body, cover, status, published_at |
 | Request | Admin\UpdatePostRequest | Validate post update: same fields, slug unique ignoring current |
-| Request | Admin\UpdateStaticPageRequest | Validate static page update: title, body |
-| Request | Admin\SendNewsletterRequest | Validate newsletter send: subject, body (HTML), confirm_send checkbox |
-| Service | NewsletterService | Create/confirm/unsubscribe subscribers; dispatch newsletter send job |
-| Job | SendNewsletterBatch | Queue: send newsletter to all confirmed, non-unsubscribed subscribers in batches |
-| Mail | NewsletterMail | Mailable for newsletter with unsubscribe link in footer |
-| Command | SeedStaticPagesCommand | Artisan command `app:seed-static-pages` to seed default static page content from Blade views |
-| Command | CleanupCartsCommand | Artisan command `app:cleanup-carts` to delete guest cart items older than 7 days |
-| Command | ExpirePendingOrdersCommand | Artisan command `app:expire-pending-orders` to mark pending orders as failed after 1 hour |
+| Request | Admin\SendNewsletterRequest | Validate newsletter send: subject, body, confirm_send checkbox |
+| Request | Admin\GrantBookRequest | Validate book grant: book_id, reason (optional) |
+| Service | Admin\PostAdminService | Create/update/delete posts with HTML sanitization via HtmlSanitizerService |
+| Service | Admin\UserAdminService | Ban/unban user; send password reset link; mark email verified |
+| Service | Admin\OrderAdminService | Mark order as refunded + revoke associated user_books in one transaction |
+| Service | Admin\UserBookAdminService | Grant/revoke/restore user book access |
+| Service | NewsletterService | Add/remove contacts in Resend Audience via API; send broadcast via Resend Broadcasts API |
+| Command | CleanupCartsCommand | `app:cleanup-carts` — delete guest cart items older than 7 days (scheduled daily) |
+| Command | ExpirePendingOrdersCommand | `app:expire-pending-orders` — mark pending orders as failed after 1 hour (scheduled every 15 min) |
+| Middleware | CheckNotBanned | Abort 403 if `auth()->user()->banned_at` is set; registered on `web` group |
 
-Phase 11 also modifies the `StaticPageController` from Phase 2: it now reads content from the `static_pages` DB table instead of Blade views.
+### Business rules
+
+76. `banned_at` is set to `now()` on ban, `null` on unban. `CheckNotBanned` middleware aborts with 403 on every authenticated request if the user is banned.
+77. Admin cannot ban themselves.
+78. Password reset is sent via `Password::sendResetLink()` — no custom flow needed.
+79. Email manual verification calls `$user->markEmailAsVerified()` and fires `Verified` event.
+80. Refund flow: admin marks order `Refunded` + all `user_books` rows for that order get `revoked_at = now()`. Done in a single DB transaction via `OrderAdminService::refund()`.
+81. Revoked `user_books` records are soft-revoked (history preserved). The download endpoint must check `revoked_at IS NULL` in addition to the existing ownership check.
+82. Manual book grant creates a `user_books` record with `order_id = null` and `granted_at = now()`.
+83. Blog post body is sanitized via `HtmlSanitizerService` on every store/update in `PostAdminService`.
+84. Newsletter subscriber management is delegated to Resend Audiences — no local `newsletter_subscribers` table, no tokens, no batch jobs.
+85. Contacts are added to Resend Audience on registration (if `newsletter_consent = true`) and via public subscribe form. `RESEND_AUDIENCE_ID` stored in `.env`.
+86. Newsletter sending uses Resend Broadcasts API — Resend handles batching, unsubscribe links, bounce handling, and delivery stats.
+87. `CleanupCartsCommand` runs daily; `ExpirePendingOrdersCommand` runs every 15 minutes — both registered in `routes/console.php` scheduler.
+
+### Implementation sub-phases
+
+**11.1 — Data layer**
+- Migrations: `banned_at` on users, `revoked_at` on user_books
+- Model updates: User (`isBanned()`, `banned_at` cast), UserBook (`isRevoked()`, `revoked_at` cast)
+- `CheckNotBanned` middleware registered on `web` group
+- Update download endpoint to check `revoked_at IS NULL`
+
+**11.2 — Blog admin backend**
+- `PostAdminService` with HtmlSanitizerService wired in
+- `Admin\PostController` full CRUD + toggleStatus
+- Form Requests: `StorePostRequest`, `UpdatePostRequest`
+
+**11.3 — Users, Orders, UserBooks, DownloadLogs backend**
+- `UserAdminService`, `OrderAdminService`, `UserBookAdminService`
+- `Admin\UserController`, `Admin\OrderController`, `Admin\UserBookController`, `Admin\DownloadLogController`
+- Form Requests: `GrantBookRequest`
+- `CleanupCartsCommand`, `ExpirePendingOrdersCommand`
+
+**11.4 — Newsletter backend**
+- `NewsletterService` — Resend Audiences API (add/remove contacts) + Resend Broadcasts API (send)
+- `NewsletterController` (public subscribe form), `Admin\NewsletterController`
+- Form Request: `SendNewsletterRequest`
+- Wire `newsletter_consent` on registration → add to Resend Audience
+
+**11.5 — Frontend**
+- All admin Blade views: posts, users, orders, user-books, download-logs, newsletter
+- Public newsletter subscribe form (single field, no confirm/unsubscribe pages — handled by Resend)
 
 ---
 
@@ -765,7 +831,6 @@ No new tables. Index review and additions on existing tables.
 Additional indexes to evaluate and add:
 - `orders`: INDEX `orders_paid_at_index` (`paid_at`) — for revenue reporting queries
 - `download_logs`: INDEX `download_logs_book_id_index` (`book_id`) — for per-book download counts
-- `analytics_events`: INDEX `analytics_events_event_created_at_index` (`event`, `created_at`) — for time-range aggregations
 
 ### Routes
 
@@ -775,11 +840,10 @@ No new routes. Existing routes receive rate limiting and security headers.
 
 | Type | Name | Responsibility |
 |------|------|----------------|
-| Migration | 2026_03_20_000012_add_performance_indexes | Add performance indexes to orders, download_logs, analytics_events |
+| Migration | 2026_03_20_000012_add_performance_indexes | Add performance indexes to orders, download_logs |
 | Middleware | SecurityHeaders | Apply Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy |
 | Observer | BookObserver | Invalidate Redis cache for catalog, book detail, homepage on book save/delete |
 | Observer | PostObserver | Invalidate Redis cache for blog index on post save/delete |
-| Observer | StaticPageObserver | Invalidate Redis cache for static pages on update |
 | Command | OptimizeCoverImagesCommand | Artisan command `app:optimize-covers` to resize and compress cover images |
 | Job | OptimizeCoverImage | Queue: resize and compress a single cover image on upload |
 
@@ -974,19 +1038,19 @@ Note: Laravel's default migrations (users, password_reset_tokens, sessions, cach
 62. Page views, sessions, funnels, and top-content reports are provided by GA4 out of the box.
 63. No personal data is sent to GA4 beyond what the default gtag configuration collects.
 
-### Phase 11 — Admin Blog & Static Pages
+### Phase 11 — Admin Blog, Users & Orders
 
-64. Static pages are seeded via artisan command `app:seed-static-pages` with default content from Blade templates.
-65. Static pages cannot be created or deleted via admin — only title and body can be edited.
-66. The public StaticPageController switches from reading Blade views to reading from the static_pages DB table.
-67. Blog posts can be deleted from admin. There is no restriction on deleting published posts.
-68. Admin can bulk toggle book publish status and featured flag from the book list.
-69. Blog post body is stored as sanitized HTML — HtmlSanitizerService runs HtmlPurifier on every save before storing to DB.
-70. Newsletter subscribers are collected via: (a) registration opt-in checkbox (`newsletter_consent = true` on users) → auto-create confirmed subscriber record; (b) standalone subscribe form on public pages.
-71. Newsletter subscription uses double opt-in: subscriber created with `confirmed_at = null`; confirmation email sent with a token link; `confirmed_at` set on token click.
+64. Blog posts can be deleted from admin. There is no restriction on deleting published posts.
+65. Blog post body is sanitized via HtmlSanitizerService (HtmlPurifier) on every store/update in PostAdminService.
+66. Banned users (`banned_at IS NOT NULL`) are blocked on every authenticated request via `CheckNotBanned` middleware — response is 403.
+67. Admin cannot ban themselves.
+68. Refund flow is manual: admin processes refund in Stripe panel, then marks the order as `Refunded` in admin UI. This triggers revocation of all associated `user_books` in a single DB transaction.
+69. `user_books` revocation is soft — `revoked_at` timestamp is set, record is not deleted. Download endpoint checks `revoked_at IS NULL`.
+70. Manual book grant creates a `user_books` record with `order_id = null`.
+71. Newsletter subscription uses double opt-in: `confirmed_at = null` until token link is clicked.
 72. Unsubscribe link (with token) is included in every newsletter email footer.
-73. Newsletter sending is batched via queue (SendNewsletterBatch job) — no memory overflow on large lists.
-74. Cart cleanup: guest cart items (`user_id IS NULL`) older than 7 days deleted by `app:cleanup-carts` (scheduled daily). Alternatively guest carts can use Redis with TTL — decision at implementation time; DB approach is default.
+73. Newsletter sending is batched via queue — no memory overflow on large subscriber lists.
+74. Cart cleanup: guest cart items (`user_id IS NULL`) older than 7 days deleted by `app:cleanup-carts` (scheduled daily).
 75. Pending orders older than 1 hour are marked `failed` by `app:expire-pending-orders` (scheduled every 15 minutes).
 
 ### Phase 12 — Hardening

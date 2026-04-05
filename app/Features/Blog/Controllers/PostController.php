@@ -13,7 +13,7 @@ class PostController extends Controller
 {
     public function index(): View
     {
-        /** @var LengthAwarePaginator<Post> $posts */
+        /** @var LengthAwarePaginator<int, Post> $posts */
         $posts = Post::query()
             ->published()
             ->orderBy('published_at', 'desc')

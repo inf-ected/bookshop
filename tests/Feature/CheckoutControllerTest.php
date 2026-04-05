@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Contracts\PaymentProvider;
 use App\Enums\OrderStatus;
+use App\Features\Checkout\Contracts\PaymentProvider;
 use App\Models\Book;
 use App\Models\CartItem;
 use App\Models\Order;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Admin;
 
 use App\Enums\BookStatus;
-use App\Jobs\ProcessBookFileUpload;
+use App\Features\Admin\Jobs\ProcessBookFileUpload;
 use App\Models\Book;
 use App\Models\User;
 use App\Models\UserBook;

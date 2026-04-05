@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Features\Cabinet\Notifications\PasswordChangedNotification;
 use App\Models\OAuthProvider;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class SettingsControllerTest extends TestCase
@@ -70,6 +72,21 @@ class SettingsControllerTest extends TestCase
 
         $response->assertRedirectToRoute('cabinet.settings');
         $this->assertTrue(Hash::check('new-password', $user->fresh()->password));
+    }
+
+    public function test_password_change_sends_notification(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create(['password' => Hash::make('old-password')]);
+
+        $this->actingAs($user)->put(route('cabinet.settings.password'), [
+            'current_password' => 'old-password',
+            'password' => 'new-password',
+            'password_confirmation' => 'new-password',
+        ]);
+
+        Notification::assertSentTo($user, PasswordChangedNotification::class);
     }
 
     public function test_password_update_fails_with_wrong_current_password(): void

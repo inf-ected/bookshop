@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\OrderStatus;
-use App\Jobs\ProcessPaymentConfirmation;
+use App\Features\Checkout\Jobs\ProcessPaymentConfirmation;
 use App\Models\Book;
 use App\Models\CartItem;
 use App\Models\Order;

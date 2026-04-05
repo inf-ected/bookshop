@@ -2,19 +2,18 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Admin\BookController as AdminBookController;
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\BookController;
-use App\Http\Controllers\CabinetController;
-use App\Http\Controllers\CartController;
-use App\Http\Controllers\CheckoutController;
-use App\Http\Controllers\DownloadController;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\OAuthController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\SettingsController;
-use App\Http\Controllers\StaticPageController;
-use App\Http\Controllers\WebhookController;
+use App\Features\Admin\Controllers\BookController as AdminBookController;
+use App\Features\Admin\Controllers\DashboardController;
+use App\Features\Auth\Controllers\OAuthController;
+use App\Features\Cabinet\Controllers\CabinetController;
+use App\Features\Cabinet\Controllers\SettingsController;
+use App\Features\Cart\Controllers\CartController;
+use App\Features\Catalog\Controllers\BookController;
+use App\Features\Catalog\Controllers\HomeController;
+use App\Features\Checkout\Controllers\CheckoutController;
+use App\Features\Checkout\Controllers\WebhookController;
+use App\Features\Download\Controllers\DownloadController;
+use App\Features\Pages\Controllers\StaticPageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -45,13 +44,6 @@ foreach ($staticPages as $page) {
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/{book}', [CartController::class, 'store'])->name('cart.store');
 Route::delete('/cart/{book}', [CartController::class, 'destroy'])->name('cart.destroy');
-
-// Profile routes (auth only)
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
 
 // OAuth redirect and callback — no guest middleware so authenticated users can link providers.
 // Complete-registration routes remain guest-only (they are part of the initial signup flow).

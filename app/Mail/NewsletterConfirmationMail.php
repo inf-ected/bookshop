@@ -10,8 +10,8 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-// Mailable stub — full implementation in Phase 8
-// Will use: resources/views/emails/newsletter/confirm-subscription.blade.php
+// TODO (Phase 8): Move to App\Features\Newsletter\Mail\NewsletterConfirmationMail
+// Full implementation in Phase 8. Will use: resources/views/emails/newsletter/confirm-subscription.blade.php
 class NewsletterConfirmationMail extends Mailable
 {
     use Queueable, SerializesModels;

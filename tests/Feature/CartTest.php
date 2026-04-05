@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Features\Cart\Services\CartService;
 use App\Models\Book;
 use App\Models\CartItem;
 use App\Models\User;
 use App\Models\UserBook;
-use App\Services\CartService;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

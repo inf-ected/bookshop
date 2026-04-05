@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Contracts\PaymentProvider;
+use App\Features\Cart\Listeners\MergeGuestCartOnLogin;
+use App\Features\Checkout\Contracts\PaymentProvider;
+use App\Features\Checkout\Events\OrderPaid;
+use App\Features\Checkout\Listeners\SendOrderConfirmationEmail;
+use App\Features\Checkout\Services\StripePaymentProvider;
 use App\Models\Book;
 use App\Models\CartItem;
-use App\Services\StripePaymentProvider;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -43,6 +47,9 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perHour(10)->by('download:'.$request->user()?->id.':'.$bookKey);
         });
+
+        Event::listen(Login::class, MergeGuestCartOnLogin::class);
+        Event::listen(OrderPaid::class, SendOrderConfirmationEmail::class);
 
         Event::listen(function (SocialiteWasCalled $event) {
             $event->extendSocialite('vk', Provider::class);

@@ -1,5 +1,10 @@
 @extends('layouts.app')
 
+<x-seo
+    :title="'Фрагмент — ' . $book->title"
+    :canonical="route('books.show', $book)"
+/>
+
 @section('content')
 
 <div class="max-w-2xl mx-auto px-4 py-10">

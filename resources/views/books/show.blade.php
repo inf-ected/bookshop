@@ -1,5 +1,35 @@
 @extends('layouts.app')
 
+@php
+    $bookDescription = $book->annotation ? mb_substr(strip_tags($book->annotation), 0, 160) : null;
+    $bookJsonLd = [
+        '@context' => 'https://schema.org',
+        '@type' => 'Product',
+        'name' => $book->title,
+        'offers' => [
+            '@type' => 'Offer',
+            'price' => number_format($book->price / 100, 2, '.', ''),
+            'priceCurrency' => 'RUB',
+            'availability' => 'https://schema.org/InStock',
+        ],
+    ];
+    if ($bookDescription) {
+        $bookJsonLd['description'] = $bookDescription;
+    }
+    if ($book->cover_url) {
+        $bookJsonLd['image'] = $book->cover_url;
+    }
+@endphp
+
+<x-seo
+    :title="$book->title"
+    :description="$bookDescription"
+    :canonical="route('books.show', $book)"
+    :og-image="$book->cover_url"
+    og-type="product"
+    :json-ld="$bookJsonLd"
+/>
+
 @section('content')
 
 <div class="max-w-5xl mx-auto px-4 py-10">

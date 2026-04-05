@@ -1,5 +1,13 @@
 @extends('layouts.app')
 
+<x-seo
+    :title="$post->title"
+    :description="$post->excerpt ?: null"
+    :canonical="route('blog.show', $post)"
+    :og-image="$post->cover_url ?? null"
+    og-type="article"
+/>
+
 @section('content')
 
 <div class="max-w-3xl mx-auto px-4 py-10">

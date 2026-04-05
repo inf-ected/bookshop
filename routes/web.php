@@ -14,10 +14,14 @@ use App\Features\Catalog\Controllers\HomeController;
 use App\Features\Checkout\Controllers\CheckoutController;
 use App\Features\Checkout\Controllers\WebhookController;
 use App\Features\Download\Controllers\DownloadController;
+use App\Features\Pages\Controllers\SitemapController;
 use App\Features\Pages\Controllers\StaticPageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
+Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
 
 // Blog
 Route::get('/blog', [PostController::class, 'index'])->name('blog.index');

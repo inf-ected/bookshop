@@ -9,8 +9,11 @@ use App\Features\Checkout\Contracts\PaymentProvider;
 use App\Features\Checkout\Events\OrderPaid;
 use App\Features\Checkout\Listeners\SendOrderConfirmationEmail;
 use App\Features\Checkout\Services\StripePaymentProvider;
+use App\Features\Pages\Observers\BookObserver;
+use App\Features\Pages\Observers\PostObserver;
 use App\Models\Book;
 use App\Models\CartItem;
+use App\Models\Post;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -41,6 +44,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Book::observe(BookObserver::class);
+        Post::observe(PostObserver::class);
+
         RateLimiter::for('download', function (Request $request) {
             $book = $request->route('book');
             $bookKey = $book instanceof Book ? $book->id : (string) $book;

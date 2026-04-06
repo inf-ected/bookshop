@@ -28,6 +28,6 @@ class NewsletterController extends Controller
             ]);
         }
 
-        return redirect()->back()->with('success', 'Вы успешно подписались на рассылку.');
+        return redirect()->back()->with('newsletter_success', 'Вы успешно подписались на рассылку.');
     }
 }

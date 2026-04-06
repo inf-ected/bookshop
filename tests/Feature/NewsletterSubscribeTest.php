@@ -42,7 +42,7 @@ class NewsletterSubscribeTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHas('success');
+        $response->assertSessionHas('newsletter_success');
     }
 
     public function test_subscribe_requires_valid_email(): void

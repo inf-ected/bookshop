@@ -49,7 +49,22 @@
                     </a>
                 @else
                     {{-- Default state: add to cart --}}
-                    <form method="POST" action="{{ route('cart.store', $book) }}">
+                    <form
+                        method="POST"
+                        action="{{ route('cart.store', $book) }}"
+                        data-ga-id="{{ $book->id }}"
+                        data-ga-name="{{ $book->title }}"
+                        data-ga-price="{{ $book->price / 100 }}"
+                        @submit="
+                            if (typeof gtag !== 'undefined') {
+                                gtag('event', 'add_to_cart', {
+                                    currency: 'RUB',
+                                    value: Number($el.dataset.gaPrice),
+                                    items: [{ item_id: $el.dataset.gaId, item_name: $el.dataset.gaName, price: Number($el.dataset.gaPrice) }]
+                                });
+                            }
+                        "
+                    >
                         @csrf
                         <button
                             type="submit"

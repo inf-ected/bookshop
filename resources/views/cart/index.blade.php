@@ -142,7 +142,21 @@
                         @else
                             {{-- State 4: authenticated + verified --}}
                             @if(\Illuminate\Support\Facades\Route::has('checkout.store'))
-                                <form method="POST" action="{{ route('checkout.store') }}">
+                                <form
+                                    method="POST"
+                                    action="{{ route('checkout.store') }}"
+                                    data-ga-value="{{ $total / 100 }}"
+                                    data-ga-items="{{ Js::from($items->map(fn($i) => ['item_id' => (string) $i->book->id, 'item_name' => $i->book->title, 'price' => $i->book->price / 100])->values()) }}"
+                                    @submit="
+                                        if (typeof gtag !== 'undefined') {
+                                            gtag('event', 'begin_checkout', {
+                                                currency: 'RUB',
+                                                value: Number($el.dataset.gaValue),
+                                                items: JSON.parse($el.dataset.gaItems)
+                                            });
+                                        }
+                                    "
+                                >
                                     @csrf
                                     <button
                                         type="submit"

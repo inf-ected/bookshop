@@ -1,5 +1,26 @@
 @extends('layouts.app', ['title' => 'Оплата — ' . config('app.name')])
 
+@if ($order && $order->status->value === 'paid')
+@push('head')
+<script>
+    window.addEventListener('DOMContentLoaded', function () {
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'purchase', {
+                transaction_id: '{{ $order->id }}',
+                currency: 'RUB',
+                value: {{ $order->total_amount / 100 }},
+                items: [
+                    @foreach ($order->items as $item)
+                    { item_id: '{{ $item->book?->id }}', item_name: {{ Js::from($item->book?->title ?? '') }}, price: {{ $item->price / 100 }} },
+                    @endforeach
+                ]
+            });
+        }
+    });
+</script>
+@endpush
+@endif
+
 @section('content')
 <div class="max-w-lg mx-auto px-4 py-16 text-center">
 

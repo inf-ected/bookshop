@@ -66,6 +66,6 @@ class OrderService
             $query->where('user_id', $userId);
         }
 
-        return $query->first();
+        return $query->with('items.book')->first();
     }
 }

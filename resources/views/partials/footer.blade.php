@@ -33,6 +33,45 @@
 
         </div>
 
+        {{-- Newsletter subscribe --}}
+        <div class="border-t border-brand-800 pt-8 pb-8">
+            <div class="max-w-md">
+                <h3 class="text-sm font-sans font-semibold text-white mb-1">Подпишитесь на рассылку</h3>
+                <p class="text-xs text-brand-400 mb-3">Новинки, акции и рекомендации — только самое важное.</p>
+
+                <form
+                    method="POST"
+                    action="{{ route('newsletter.subscribe') }}"
+                    x-data="{ loading: false }"
+                    @submit="loading = true"
+                    class="flex gap-2"
+                >
+                    @csrf
+                    <input
+                        type="email"
+                        name="email"
+                        required
+                        placeholder="Ваш email"
+                        class="flex-1 px-3.5 py-2 rounded-lg bg-brand-900 border border-brand-700 text-sm text-white placeholder:text-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                    >
+                    <button
+                        type="submit"
+                        :disabled="loading"
+                        class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium rounded-lg transition disabled:opacity-60 shrink-0"
+                    >
+                        <span x-show="!loading">Подписаться</span>
+                        <span x-show="loading" x-cloak>...</span>
+                    </button>
+                </form>
+                @if(session('newsletter_success'))
+                    <p class="mt-1.5 text-xs text-green-400">{{ session('newsletter_success') }}</p>
+                @endif
+                @if($errors->has('email'))
+                    <p class="mt-1.5 text-xs text-red-300">{{ $errors->first('email') }}</p>
+                @endif
+            </div>
+        </div>
+
         {{-- Social links --}}
         <div class="border-t border-brand-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
 

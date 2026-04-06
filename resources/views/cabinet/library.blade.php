@@ -68,6 +68,7 @@
                             <a
                                 href="{{ route('books.download', $userBook->book) }}"
                                 class="flex items-center justify-center gap-1.5 w-full px-3 py-2 bg-brand-700 text-white font-sans text-xs rounded hover:bg-brand-800 transition"
+                                onclick="if(typeof gtag !== 'undefined') gtag('event', 'file_download', { file_name: {{ Js::from($userBook->book->title) }}, item_id: '{{ $userBook->book->id }}' })"
                             >
                                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

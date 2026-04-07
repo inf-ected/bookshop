@@ -63,7 +63,7 @@ class NewsletterService
                 'html' => $html,
             ]);
 
-            $this->resend->broadcasts->send($broadcast->id, []);
+            $this->resend->broadcasts->send($broadcast->getAttribute('id'), []);
         } catch (Throwable $e) {
             Log::error('NewsletterService::sendBroadcast failed.', [
                 'subject' => $subject,

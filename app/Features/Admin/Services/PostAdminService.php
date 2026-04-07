@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Features\Admin\Services;
 
 use App\Enums\PostStatus;
-use App\Features\Admin\Services\HtmlSanitizerService;
 use App\Models\Post;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;

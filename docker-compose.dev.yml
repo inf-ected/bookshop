@@ -73,6 +73,30 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  scheduler:
+    container_name: bookshop_scheduler
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: app
+      args:
+        HOST_UID: "${HOST_UID:-1000}"
+        HOST_GID: "${HOST_GID:-1000}"
+    env_file: .env
+    environment:
+      APP_ENV:   local
+      APP_DEBUG: "true"
+    volumes:
+      - .:/var/www:delegated
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+      - ./docker/php/www.conf:/usr/local/etc/php-fpm.d/www.conf:ro
+    # Emulates cron: runs schedule:run every 60 seconds, as Laravel docs recommend.
+    command: sh -c "while true; do php artisan schedule:run --no-interaction; sleep 60; done"
+    depends_on:
+      php:
+        condition: service_started
+    restart: unless-stopped
+
   stripe:
     container_name: bookshop_stripe
     image: stripe/stripe-cli:latest

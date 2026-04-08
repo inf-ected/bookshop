@@ -808,30 +808,96 @@ Note: Unsubscribe and confirm links are handled by Resend — no local routes ne
 
 ---
 
-## Phase 12 — Hardening & Monitoring
+## Refactor — Payment Abstraction (`order_transactions`)
+
+**Goal**: decouple `orders` from payment provider implementation details.
+
+### Motivation
+`orders` currently holds `stripe_session_id`, `stripe_payment_intent_id`, `payment_provider` — provider-specific columns that leak implementation detail into a business entity. Adding a second provider (e.g. YooKassa) would require new columns or schema changes.
 
 ### Schema
 
-No new tables. Index review and additions on existing tables.
+**Remove from `orders`**: `stripe_session_id`, `stripe_payment_intent_id`, `payment_provider`
 
-Additional indexes to evaluate and add:
-- `orders`: INDEX `orders_paid_at_index` (`paid_at`) — for revenue reporting queries
-- `download_logs`: INDEX `download_logs_book_id_index` (`book_id`) — for per-book download counts
+**New table `order_transactions`**:
+```
+id
+order_id          FK → orders.id (cascadeOnDelete)
+provider          varchar(30)   — 'stripe', 'yookassa', etc.
+provider_data     json          — all provider-specific fields (session_id, payment_intent, etc.)
+status            varchar(20)   — pending / succeeded / failed / expired
+expires_at        timestamp nullable
+created_at, updated_at
+```
+
+### Pending order expiry — combined approach
+- **Primary**: webhook `checkout.session.expired` from Stripe → set `order_transactions.status = expired`, `orders.status = failed`
+- **Fallback**: `app:expire-pending-orders` cron (every 15 min) looks at `order_transactions` where `status = pending AND expires_at < now()` → same result
+- Cron is a safety net for missed webhooks, not the primary mechanism
+
+### Affected code
+- `WebhookController` — lookup order via `order_transactions.provider_data->>'$.session_id'`
+- `CheckoutController` — create `order_transaction` on checkout initiation
+- `OrderService` — remove stripe-specific methods, add `findByProviderData()`
+- `StripePaymentProvider` — write to `order_transactions.provider_data`
+- Indexes: add generated column or composite index on `order_transactions` for webhook lookups
+
+### Git
+- **Branch**: `refactor/payment-abstraction`
+- **PR**: separate, before Phase 12 hardening
+
+---
+
+## Phase 12 — Hardening & Monitoring
+
+### Implementation Sub-phases
+
+#### 12.1 — Security Headers & Rate Limiting (backend)
+- `SecurityHeaders` middleware: `Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` — applied globally via `bootstrap/app.php`
+- `RateLimiter::for('login', ...)` — applied to `POST /login` and `POST /forgot-password` in `routes/auth.php`
+- `RateLimiter::for('checkout', ...)` — applied to `POST /checkout`
+- RateLimiter definitions added to `AppServiceProvider::boot()`
+- Tests: security headers present on response, rate limiter triggers 429 after threshold
+
+#### 12.2 — Performance Indexes (backend)
+Single migration replacing/adding atomic indexes:
+- `books`: DROP composite `[status, sort_order]` → ADD `index(status)`, `index(sort_order)`, `index(is_available)`
+- `orders`: ADD `index(paid_at)`, `index(stripe_payment_intent_id)`
+- `download_logs`: ADD `index(book_id)`
+- `users`: ADD `index(role)`
+
+#### 12.3 — Laravel Horizon (backend)
+- Install `laravel/horizon`
+- Configure queues: `default`, `payments`, `uploads`, `emails`
+- Horizon dashboard protected: accessible to `admin` role only
+- Docker: replace `queue:work` container command with `horizon`
+- Telescope: install `laravel/telescope`, restrict to `local`/`dev` environments only
+
+#### 12.4 — Automated Backups (backend)
+- Install `spatie/laravel-backup`
+- Config: daily DB dump + upload to `s3-private` bucket under `backups/` prefix
+- Scheduler: `BackupCommand` runs daily at 03:00
+- Notification on failure via email (uses existing mail infrastructure)
+- Test: backup command runs without error in test environment
+
+#### 12.5 — Cookie Consent Banner (frontend)
+- Blade component `<x-cookie-consent>` included in `layouts/app.blade.php`
+- Consent state stored in `localStorage` key `cookie_consent`
+- GA4 `gtag` initialised only after consent is given
+- Banner dismissed on accept; re-shown if localStorage is cleared
+- No backend changes required
+
+### Out of scope (backlog)
+- Redis cache (BookObserver, PostObserver, cache keys) — defer until post-deploy audit
+- Cover image optimization (`OptimizeCoverImage` job, `app:optimize-covers` command) — defer until book catalogue grows
+
+### Schema
+
+No new tables. Index changes only (see 12.2).
 
 ### Routes
 
-No new routes. Existing routes receive rate limiting and security headers.
-
-### Classes
-
-| Type | Name | Responsibility |
-|------|------|----------------|
-| Migration | 2026_03_20_000012_add_performance_indexes | Add performance indexes to orders, download_logs |
-| Middleware | SecurityHeaders | Apply Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy |
-| Observer | BookObserver | Invalidate Redis cache for catalog, book detail, homepage on book save/delete |
-| Observer | PostObserver | Invalidate Redis cache for blog index on post save/delete |
-| Command | OptimizeCoverImagesCommand | Artisan command `app:optimize-covers` to resize and compress cover images |
-| Job | OptimizeCoverImage | Queue: resize and compress a single cover image on upload |
+No new routes. Existing routes receive rate limiting (12.1) and security headers (12.1).
 
 ---
 

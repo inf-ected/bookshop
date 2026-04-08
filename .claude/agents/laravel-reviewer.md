@@ -75,7 +75,7 @@ Cross-check the implemented code against these critical rules from the blueprint
 | 27 | Order created BEFORE Stripe redirect | `OrderService::create()` called before `StripePaymentProvider::createSession()` |
 | 28 | `order_items.price` = snapshot | Price copied from `books.price` at order creation, not referenced |
 | 29 | Webhook = source of truth | Success redirect does NOT mark order paid |
-| 30 | Webhook idempotency | `stripe_session_id` checked before processing |
+| 30 | Webhook idempotency | `order_transactions` status checked before processing — skip if already paid |
 | 35 | Stripe signature verified | Every webhook request verified |
 | 37 | Download requires `user_books` | `DownloadController` checks ownership |
 | 39 | Download rate limited | `throttle:download` middleware on download route |

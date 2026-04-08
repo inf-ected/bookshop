@@ -10,6 +10,7 @@ use App\Features\Checkout\Services\OrderService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Stripe\Checkout\Session;
 use Stripe\Exception\SignatureVerificationException;
@@ -25,7 +26,7 @@ class WebhookController extends Controller
      *
      * Rule 35: Stripe webhook signature is verified on every request.
      * Rule 29: Webhook is the source of truth for payment confirmation.
-     * Rule 30: Idempotency via stripe_session_id — skip if already paid.
+     * Rule 30: Idempotency via order_transactions — skip if already paid.
      */
     public function handleStripe(Request $request): Response
     {
@@ -52,10 +53,6 @@ class WebhookController extends Controller
 
         Log::info('Stripe webhook received', ['type' => $event->type]);
 
-        // We intentionally listen only to checkout.session.completed.
-        // Stripe also sends charge.succeeded and payment_intent.succeeded for the same
-        // transaction, but checkout.session.completed is the only event that carries our
-        // stripe_session_id, which is the key we use to look up the order.
         if ($event->type === 'checkout.session.completed') {
             /** @var Session $session */
             $session = $event->data->object;
@@ -65,12 +62,12 @@ class WebhookController extends Controller
                 ? $session->payment_intent
                 : (string) ($session->payment_intent->id ?? '');
 
-            // Rule 30: look up order by stripe_session_id for idempotency
-            $order = $this->orderService->findByStripeSession($stripeSessionId);
+            // Look up order via order_transactions (provider-agnostic approach)
+            $order = $this->orderService->findByProviderSession('stripe', $stripeSessionId);
 
             if ($order === null) {
                 Log::warning('Stripe webhook: order not found for session', [
-                    'stripe_session_id' => $stripeSessionId,
+                    'session_id' => $stripeSessionId,
                 ]);
 
                 return response('Order not found', 200);
@@ -84,7 +81,7 @@ class WebhookController extends Controller
                 Log::info('Stripe webhook: session completed but payment not yet confirmed', [
                     'order_id' => $order->id,
                     'payment_status' => $session->payment_status,
-                    'stripe_session_id' => $stripeSessionId,
+                    'session_id' => $stripeSessionId,
                 ]);
 
                 return response('OK', 200);
@@ -94,7 +91,7 @@ class WebhookController extends Controller
             if ($order->status === OrderStatus::Paid) {
                 Log::info('Stripe webhook: order already paid, skipping', [
                     'order_id' => $order->id,
-                    'stripe_session_id' => $stripeSessionId,
+                    'session_id' => $stripeSessionId,
                 ]);
 
                 return response('OK', 200);
@@ -102,7 +99,7 @@ class WebhookController extends Controller
 
             Log::info('Stripe webhook: dispatching ProcessPaymentConfirmation', [
                 'order_id' => $order->id,
-                'stripe_session_id' => $stripeSessionId,
+                'session_id' => $stripeSessionId,
             ]);
 
             // Dispatch queued job — Rule 29, 30, 31
@@ -111,6 +108,42 @@ class WebhookController extends Controller
                 $paymentIntentId,
                 $stripeSessionId,
             );
+        }
+
+        if ($event->type === 'checkout.session.expired') {
+            /** @var Session $session */
+            $session = $event->data->object;
+
+            $stripeSessionId = $session->id;
+
+            $transaction = $this->orderService->findTransactionByProviderData('stripe', 'session_id', $stripeSessionId);
+
+            if ($transaction === null) {
+                Log::warning('Stripe webhook: transaction not found for expired session', [
+                    'session_id' => $stripeSessionId,
+                ]);
+
+                return response('OK', 200);
+            }
+
+            // Only transition pending transactions — avoid overwriting already-settled states
+            if ($transaction->status === 'pending') {
+                DB::transaction(function () use ($transaction, $stripeSessionId): void {
+                    $transaction->status = 'expired';
+                    $transaction->save();
+
+                    $order = $transaction->order;
+                    if ($order !== null && $order->status === OrderStatus::Pending) {
+                        $order->status = OrderStatus::Failed;
+                        $order->save();
+
+                        Log::info('Stripe webhook: session expired, order marked failed', [
+                            'order_id' => $order->id,
+                            'session_id' => $stripeSessionId,
+                        ]);
+                    }
+                });
+            }
         }
 
         return response('OK', 200);

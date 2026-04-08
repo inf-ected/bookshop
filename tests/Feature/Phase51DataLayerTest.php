@@ -9,6 +9,7 @@ use App\Models\Book;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderTransaction;
 use App\Models\User;
 use App\Models\UserBook;
 use Carbon\Carbon;
@@ -37,8 +38,16 @@ class Phase51DataLayerTest extends TestCase
         $this->assertTrue(\Schema::hasTable('orders'));
         $this->assertTrue(\Schema::hasColumns('orders', [
             'id', 'user_id', 'status', 'total_amount', 'currency',
-            'payment_provider', 'stripe_session_id', 'stripe_payment_intent_id',
             'paid_at', 'created_at', 'updated_at',
+        ]));
+    }
+
+    public function test_order_transactions_table_exists_with_correct_columns(): void
+    {
+        $this->assertTrue(\Schema::hasTable('order_transactions'));
+        $this->assertTrue(\Schema::hasColumns('order_transactions', [
+            'id', 'order_id', 'provider', 'provider_data', 'status',
+            'expires_at', 'created_at', 'updated_at',
         ]));
     }
 
@@ -183,12 +192,56 @@ class Phase51DataLayerTest extends TestCase
         $this->assertSame(OrderStatus::Refunded, $refunded->status);
     }
 
-    public function test_stripe_session_id_unique_constraint(): void
+    public function test_order_transaction_factory_creates_valid_record(): void
     {
-        Order::factory()->create(['stripe_session_id' => 'cs_test_abc123']);
+        $transaction = OrderTransaction::factory()->create();
 
-        $this->expectException(QueryException::class);
-        Order::factory()->create(['stripe_session_id' => 'cs_test_abc123']);
+        $this->assertDatabaseHas('order_transactions', ['id' => $transaction->id]);
+        $this->assertSame('stripe', $transaction->provider);
+        $this->assertIsArray($transaction->provider_data);
+    }
+
+    public function test_order_transaction_factory_states(): void
+    {
+        $order = Order::factory()->create();
+
+        $pending = OrderTransaction::factory()->pending()->create(['order_id' => $order->id]);
+        $succeeded = OrderTransaction::factory()->succeeded()->create(['order_id' => $order->id]);
+        $failed = OrderTransaction::factory()->failed()->create(['order_id' => $order->id]);
+        $expired = OrderTransaction::factory()->expired()->create(['order_id' => $order->id]);
+
+        $this->assertSame('pending', $pending->status);
+        $this->assertSame('succeeded', $succeeded->status);
+        $this->assertSame('failed', $failed->status);
+        $this->assertSame('expired', $expired->status);
+    }
+
+    public function test_order_transaction_belongs_to_order(): void
+    {
+        $order = Order::factory()->create();
+        $transaction = OrderTransaction::factory()->create(['order_id' => $order->id]);
+
+        $this->assertInstanceOf(Order::class, $transaction->order);
+        $this->assertSame($order->id, $transaction->order->id);
+    }
+
+    public function test_order_has_many_transactions(): void
+    {
+        $order = Order::factory()->create();
+        OrderTransaction::factory()->count(2)->create(['order_id' => $order->id]);
+
+        $this->assertCount(2, $order->transactions);
+    }
+
+    public function test_order_transaction_provider_data_cast_to_array(): void
+    {
+        $transaction = OrderTransaction::factory()->create([
+            'provider_data' => ['session_id' => 'cs_test_abc', 'payment_intent' => 'pi_test_xyz'],
+        ]);
+
+        $fresh = $transaction->fresh();
+        $this->assertIsArray($fresh->provider_data);
+        $this->assertSame('cs_test_abc', $fresh->provider_data['session_id']);
     }
 
     // -------------------------------------------------------------------------

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -27,9 +28,6 @@ class Order extends Model
         'status',
         'total_amount',
         'currency',
-        'payment_provider',
-        'stripe_session_id',
-        'stripe_payment_intent_id',
         'paid_at',
     ];
 
@@ -58,5 +56,21 @@ class Order extends Model
     public function userBooks(): HasMany
     {
         return $this->hasMany(UserBook::class);
+    }
+
+    /** @return HasMany<OrderTransaction, $this> */
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(OrderTransaction::class);
+    }
+
+    /**
+     * The single active/latest transaction for this order.
+     *
+     * @return HasOne<OrderTransaction, $this>
+     */
+    public function transaction(): HasOne
+    {
+        return $this->hasOne(OrderTransaction::class)->latestOfMany();
     }
 }

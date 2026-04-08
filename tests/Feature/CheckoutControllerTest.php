@@ -9,6 +9,7 @@ use App\Features\Checkout\Contracts\PaymentProvider;
 use App\Models\Book;
 use App\Models\CartItem;
 use App\Models\Order;
+use App\Models\OrderTransaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Stripe\Exception\InvalidRequestException;
@@ -28,7 +29,9 @@ class CheckoutControllerTest extends TestCase
     {
         parent::setUp();
 
-        // Bind a fake PaymentProvider so tests never hit real Stripe API
+        // Bind a fake PaymentProvider so tests never hit real Stripe API.
+        // The fake also creates an OrderTransaction to match real provider behaviour —
+        // the provider is responsible for persisting provider-specific data.
         $this->app->bind(PaymentProvider::class, function () {
             return new class($this->fakeSession) implements PaymentProvider
             {
@@ -37,6 +40,14 @@ class CheckoutControllerTest extends TestCase
 
                 public function createSession(Order $order, User $user): array
                 {
+                    OrderTransaction::query()->create([
+                        'order_id' => $order->id,
+                        'provider' => 'stripe',
+                        'provider_data' => ['session_id' => $this->session['id']],
+                        'status' => 'pending',
+                        'expires_at' => now()->addMinutes(30),
+                    ]);
+
                     return $this->session;
                 }
             };
@@ -98,7 +109,13 @@ class CheckoutControllerTest extends TestCase
 
         $order = Order::query()->first();
         $this->assertEquals(OrderStatus::Pending, $order->status);
-        $this->assertSame('cs_test_fake_session_id', $order->stripe_session_id);
+
+        // session_id is now stored in order_transactions, not on the order itself
+        $this->assertDatabaseHas('order_transactions', [
+            'order_id' => $order->id,
+            'provider' => 'stripe',
+            'status' => 'pending',
+        ]);
 
         // Rule 28: price snapshot stored on order_item
         $this->assertDatabaseHas('order_items', [
@@ -211,9 +228,10 @@ class CheckoutControllerTest extends TestCase
     public function test_success_page_redirects_to_library_when_order_already_paid(): void
     {
         $user = User::factory()->create();
-        $order = Order::factory()->paid()->create([
-            'user_id' => $user->id,
-            'stripe_session_id' => 'cs_test_already_paid',
+        $order = Order::factory()->paid()->create(['user_id' => $user->id]);
+        OrderTransaction::factory()->succeeded()->create([
+            'order_id' => $order->id,
+            'provider_data' => ['session_id' => 'cs_test_already_paid', 'payment_intent' => 'pi_x'],
         ]);
 
         $response = $this->actingAs($user)
@@ -225,9 +243,10 @@ class CheckoutControllerTest extends TestCase
     public function test_success_page_shows_polling_view_when_order_still_pending(): void
     {
         $user = User::factory()->create();
-        $order = Order::factory()->pending()->create([
-            'user_id' => $user->id,
-            'stripe_session_id' => 'cs_test_pending',
+        $order = Order::factory()->pending()->create(['user_id' => $user->id]);
+        OrderTransaction::factory()->pending()->create([
+            'order_id' => $order->id,
+            'provider_data' => ['session_id' => 'cs_test_pending'],
         ]);
 
         $response = $this->actingAs($user)

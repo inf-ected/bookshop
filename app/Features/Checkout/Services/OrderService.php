@@ -8,6 +8,7 @@ use App\Enums\OrderStatus;
 use App\Features\Cart\Exceptions\EmptyCartException;
 use App\Features\Cart\Services\CartService;
 use App\Models\Order;
+use App\Models\OrderTransaction;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -43,7 +44,6 @@ class OrderService
                 'status' => OrderStatus::Pending,
                 'total_amount' => $this->cartService->getTotalFromItems($items),
                 'currency' => 'RUB',
-                'payment_provider' => 'stripe',
             ]);
 
             foreach ($items as $item) {
@@ -60,14 +60,49 @@ class OrderService
         });
     }
 
-    public function findByStripeSession(string $stripeSessionId, ?int $userId = null): ?Order
+    /**
+     * Find an order by its provider-specific session ID.
+     *
+     * Looks up the OrderTransaction by provider + JSON field, then returns the
+     * associated Order (optionally scoped to a user). This replaces the former
+     * findByStripeSession() which queried stripe_session_id directly on orders.
+     */
+    public function findByProviderSession(string $provider, string $sessionId, ?int $userId = null): ?Order
     {
-        $query = Order::query()->where('stripe_session_id', $stripeSessionId);
+        $transaction = $this->findTransactionByProviderData($provider, 'session_id', $sessionId);
+
+        if ($transaction === null) {
+            return null;
+        }
+
+        $query = Order::query()
+            ->with('items.book')
+            ->where('id', $transaction->order_id);
 
         if ($userId !== null) {
             $query->where('user_id', $userId);
         }
 
-        return $query->with('items.book')->first();
+        return $query->first();
+    }
+
+    /**
+     * Find an OrderTransaction by a specific key within provider_data JSON.
+     *
+     * Uses json_extract() which is supported by both MySQL 5.7+ and SQLite 3.38+.
+     * Avoids JSON_UNQUOTE() because it is MySQL-only and not available in the
+     * SQLite in-memory database used during tests.
+     *
+     * SECURITY: $key is interpolated directly into the SQL expression. It MUST be
+     * a trusted internal constant (e.g. 'session_id', 'payment_intent') — never
+     * pass user-supplied input as $key.
+     */
+    public function findTransactionByProviderData(string $provider, string $key, string $value): ?OrderTransaction
+    {
+        return OrderTransaction::query()
+            ->with('order')
+            ->where('provider', $provider)
+            ->whereRaw("json_extract(provider_data, '$.{$key}') = ?", [$value])
+            ->first();
     }
 }

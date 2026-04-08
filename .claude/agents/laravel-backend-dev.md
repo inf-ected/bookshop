@@ -235,7 +235,7 @@ Storage::disk('s3-private')->temporaryUrl($path, now()->addMinutes(config('books
 | 27 | Order created BEFORE Stripe redirect |
 | 28 | `order_items.price` = snapshot of price at purchase time |
 | 29 | Webhook is the payment source of truth, not success redirect |
-| 30 | Webhook idempotency: check `stripe_session_id` before processing |
+| 30 | Webhook idempotency: check `order_transactions` status before processing — skip if already paid |
 | 35 | Stripe webhook signature verified on every request |
 | 36 | Order status transitions: `pending→paid`, `pending→failed`, `paid→refunded` only |
 | 37 | Download requires `user_books` record for that book |

@@ -8,6 +8,7 @@ use App\Enums\OrderStatus;
 use App\Features\Checkout\Events\OrderPaid;
 use App\Models\CartItem;
 use App\Models\Order;
+use App\Models\OrderTransaction;
 use App\Models\UserBook;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -26,15 +27,15 @@ class ProcessPaymentConfirmation implements ShouldQueue
 
     public function __construct(
         public readonly int $orderId,
-        public readonly string $stripePaymentIntentId,
-        public readonly string $stripeSessionId,
+        public readonly string $paymentIntentId,
+        public readonly string $sessionId,
     ) {}
 
     public function handle(): void
     {
         Log::info('ProcessPaymentConfirmation: starting', [
             'order_id' => $this->orderId,
-            'session_id' => $this->stripeSessionId,
+            'session_id' => $this->sessionId,
         ]);
 
         /** @var Order|null $paidOrder */
@@ -57,8 +58,25 @@ class ProcessPaymentConfirmation implements ShouldQueue
 
             $order->status = OrderStatus::Paid;
             $order->paid_at = now();
-            $order->stripe_payment_intent_id = $this->stripePaymentIntentId;
             $order->save();
+
+            // Update the OrderTransaction to succeeded and store the payment_intent
+            // so the provider-specific data stays in order_transactions, not on orders.
+            $transaction = OrderTransaction::query()
+                ->where('order_id', $this->orderId)
+                ->where('provider', 'stripe')
+                ->whereRaw("json_extract(provider_data, '$.session_id') = ?", [$this->sessionId])
+                ->first();
+
+            if ($transaction !== null) {
+                $providerData = $transaction->provider_data;
+                $providerData['payment_intent'] = $this->paymentIntentId;
+
+                $transaction->provider_data = $providerData;
+                $transaction->status = 'succeeded';
+                $transaction->expires_at = null;
+                $transaction->save();
+            }
 
             // Rule 31: create user_books records for each order item
             $order->load('items');

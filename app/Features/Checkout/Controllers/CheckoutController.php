@@ -57,9 +57,6 @@ class CheckoutController extends Controller
                 ->withErrors(['cart' => 'Ошибка при создании платежа. Попробуйте позже.']);
         }
 
-        $order->stripe_session_id = $session['id'];
-        $order->save();
-
         return redirect()->away($session['url']);
     }
 
@@ -71,10 +68,10 @@ class CheckoutController extends Controller
      */
     public function success(Request $request): View|RedirectResponse
     {
-        $stripeSessionId = $request->query('session_id');
+        $sessionId = $request->query('session_id');
 
-        if ($stripeSessionId) {
-            $order = $this->orderService->findByStripeSession($stripeSessionId, $request->user()->id);
+        if ($sessionId) {
+            $order = $this->orderService->findByProviderSession('stripe', $sessionId, $request->user()->id);
 
             // Rule 33: if already paid, redirect to library
             if ($order && $order->status === OrderStatus::Paid) {

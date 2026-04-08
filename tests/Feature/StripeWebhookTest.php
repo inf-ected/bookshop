@@ -10,6 +10,7 @@ use App\Models\Book;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderTransaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -111,8 +112,11 @@ class StripeWebhookTest extends TestCase
         $book = Book::factory()->create(['price' => 59000]);
         $order = Order::factory()->pending()->create([
             'user_id' => $user->id,
-            'stripe_session_id' => 'cs_test_valid_session',
             'total_amount' => 59000,
+        ]);
+        OrderTransaction::factory()->pending()->create([
+            'order_id' => $order->id,
+            'provider_data' => ['session_id' => 'cs_test_valid_session'],
         ]);
         OrderItem::factory()->create([
             'order_id' => $order->id,
@@ -137,8 +141,8 @@ class StripeWebhookTest extends TestCase
 
         Queue::assertPushed(ProcessPaymentConfirmation::class, function ($job) use ($order): bool {
             return $job->orderId === $order->id
-                && $job->stripePaymentIntentId === 'pi_test_intent_123'
-                && $job->stripeSessionId === 'cs_test_valid_session';
+                && $job->paymentIntentId === 'pi_test_intent_123'
+                && $job->sessionId === 'cs_test_valid_session';
         });
     }
 
@@ -153,7 +157,10 @@ class StripeWebhookTest extends TestCase
         $user = User::factory()->create();
         $order = Order::factory()->paid()->create([
             'user_id' => $user->id,
-            'stripe_session_id' => 'cs_test_already_paid',
+        ]);
+        OrderTransaction::factory()->succeeded()->create([
+            'order_id' => $order->id,
+            'provider_data' => ['session_id' => 'cs_test_already_paid', 'payment_intent' => 'pi_test_intent_456'],
         ]);
 
         $event = $this->buildCheckoutSessionCompletedEvent('cs_test_already_paid', 'pi_test_intent_456');
@@ -180,9 +187,10 @@ class StripeWebhookTest extends TestCase
         Queue::fake();
 
         $user = User::factory()->create();
-        Order::factory()->create([
-            'user_id' => $user->id,
-            'stripe_session_id' => 'cs_test_async_session',
+        $order = Order::factory()->create(['user_id' => $user->id]);
+        OrderTransaction::factory()->pending()->create([
+            'order_id' => $order->id,
+            'provider_data' => ['session_id' => 'cs_test_async_session'],
         ]);
 
         // Simulate an async payment method (e.g. bank transfer) where the session
@@ -236,8 +244,11 @@ class StripeWebhookTest extends TestCase
         $book = Book::factory()->create(['price' => 59000]);
         $order = Order::factory()->pending()->create([
             'user_id' => $user->id,
-            'stripe_session_id' => 'cs_test_job_test',
             'total_amount' => 59000,
+        ]);
+        OrderTransaction::factory()->pending()->create([
+            'order_id' => $order->id,
+            'provider_data' => ['session_id' => 'cs_test_job_test'],
         ]);
         OrderItem::factory()->create([
             'order_id' => $order->id,
@@ -255,7 +266,13 @@ class StripeWebhookTest extends TestCase
         $order->refresh();
         $this->assertEquals(OrderStatus::Paid, $order->status);
         $this->assertNotNull($order->paid_at);
-        $this->assertSame('pi_test_intent_job', $order->stripe_payment_intent_id);
+
+        // payment_intent is now stored in order_transactions, not on the order
+        $this->assertDatabaseHas('order_transactions', [
+            'order_id' => $order->id,
+            'provider' => 'stripe',
+            'status' => 'succeeded',
+        ]);
 
         $this->assertDatabaseHas('user_books', [
             'user_id' => $user->id,
@@ -270,7 +287,10 @@ class StripeWebhookTest extends TestCase
         $book = Book::factory()->create();
         $order = Order::factory()->paid()->create([
             'user_id' => $user->id,
-            'stripe_session_id' => 'cs_test_idempotent',
+        ]);
+        OrderTransaction::factory()->succeeded()->create([
+            'order_id' => $order->id,
+            'provider_data' => ['session_id' => 'cs_test_idempotent', 'payment_intent' => 'pi_original'],
         ]);
         OrderItem::factory()->create([
             'order_id' => $order->id,
@@ -298,7 +318,10 @@ class StripeWebhookTest extends TestCase
         $book = Book::factory()->create();
         $order = Order::factory()->pending()->create([
             'user_id' => $user->id,
-            'stripe_session_id' => 'cs_test_cart_clear',
+        ]);
+        OrderTransaction::factory()->pending()->create([
+            'order_id' => $order->id,
+            'provider_data' => ['session_id' => 'cs_test_cart_clear'],
         ]);
         OrderItem::factory()->create([
             'order_id' => $order->id,
@@ -316,5 +339,115 @@ class StripeWebhookTest extends TestCase
         $job->handle();
 
         $this->assertDatabaseMissing('cart_items', ['user_id' => $user->id]);
+    }
+
+    // -------------------------------------------------------------------------
+    // checkout.session.expired event
+    // -------------------------------------------------------------------------
+
+    public function test_webhook_handles_session_expired_event(): void
+    {
+        $user = User::factory()->create();
+        $order = Order::factory()->pending()->create(['user_id' => $user->id]);
+        $transaction = OrderTransaction::factory()->pending()->create([
+            'order_id' => $order->id,
+            'provider_data' => ['session_id' => 'cs_test_expired_session'],
+        ]);
+
+        $event = [
+            'id' => 'evt_test_'.fake()->regexify('[a-zA-Z0-9]{24}'),
+            'type' => 'checkout.session.expired',
+            'data' => [
+                'object' => [
+                    'id' => 'cs_test_expired_session',
+                    'object' => 'checkout.session',
+                ],
+            ],
+        ];
+        $webhook = $this->buildStripeWebhook($event);
+
+        $response = $this->call(
+            'POST',
+            route('webhooks.stripe'),
+            [],
+            [],
+            [],
+            ['HTTP_Stripe-Signature' => $webhook['signature'], 'CONTENT_TYPE' => 'application/json'],
+            $webhook['payload']
+        );
+
+        $response->assertStatus(200);
+
+        $transaction->refresh();
+        $this->assertSame('expired', $transaction->status);
+
+        $order->refresh();
+        $this->assertEquals(OrderStatus::Failed, $order->status);
+    }
+
+    public function test_webhook_ignores_expired_event_when_transaction_not_found(): void
+    {
+        $event = [
+            'id' => 'evt_test_'.fake()->regexify('[a-zA-Z0-9]{24}'),
+            'type' => 'checkout.session.expired',
+            'data' => [
+                'object' => [
+                    'id' => 'cs_test_unknown_session',
+                    'object' => 'checkout.session',
+                ],
+            ],
+        ];
+        $webhook = $this->buildStripeWebhook($event);
+
+        $response = $this->call(
+            'POST',
+            route('webhooks.stripe'),
+            [],
+            [],
+            [],
+            ['HTTP_Stripe-Signature' => $webhook['signature'], 'CONTENT_TYPE' => 'application/json'],
+            $webhook['payload']
+        );
+
+        $response->assertStatus(200);
+    }
+
+    public function test_webhook_does_not_double_expire_already_succeeded_transaction(): void
+    {
+        $user = User::factory()->create();
+        $order = Order::factory()->paid()->create(['user_id' => $user->id]);
+        $transaction = OrderTransaction::factory()->succeeded()->create([
+            'order_id' => $order->id,
+            'provider_data' => ['session_id' => 'cs_test_paid_session', 'payment_intent' => 'pi_test_x'],
+        ]);
+
+        $event = [
+            'id' => 'evt_test_'.fake()->regexify('[a-zA-Z0-9]{24}'),
+            'type' => 'checkout.session.expired',
+            'data' => [
+                'object' => [
+                    'id' => 'cs_test_paid_session',
+                    'object' => 'checkout.session',
+                ],
+            ],
+        ];
+        $webhook = $this->buildStripeWebhook($event);
+
+        $this->call(
+            'POST',
+            route('webhooks.stripe'),
+            [],
+            [],
+            [],
+            ['HTTP_Stripe-Signature' => $webhook['signature'], 'CONTENT_TYPE' => 'application/json'],
+            $webhook['payload']
+        );
+
+        // Transaction must remain succeeded, order must remain paid
+        $transaction->refresh();
+        $this->assertSame('succeeded', $transaction->status);
+
+        $order->refresh();
+        $this->assertEquals(OrderStatus::Paid, $order->status);
     }
 }

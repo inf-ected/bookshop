@@ -82,10 +82,10 @@
                     <p class="text-text-primary">{{ $order->paid_at ? $order->paid_at->format('d.m.Y H:i') : '—' }}</p>
                 </div>
 
-                @if ($order->stripe_session_id)
+                @if ($order->transaction?->provider_data['session_id'] ?? null)
                     <div class="col-span-2">
-                        <p class="text-text-subtle text-xs mb-0.5">Stripe Session ID</p>
-                        <p class="font-mono text-xs text-text-muted break-all">{{ $order->stripe_session_id }}</p>
+                        <p class="text-text-subtle text-xs mb-0.5">Session ID</p>
+                        <p class="font-mono text-xs text-text-muted break-all">{{ $order->transaction->provider_data['session_id'] }}</p>
                     </div>
                 @endif
             </div>

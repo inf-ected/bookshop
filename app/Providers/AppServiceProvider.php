@@ -9,12 +9,14 @@ use App\Features\Checkout\Contracts\PaymentProvider;
 use App\Features\Checkout\Events\OrderPaid;
 use App\Features\Checkout\Listeners\SendOrderConfirmationEmail;
 use App\Features\Checkout\Services\StripePaymentProvider;
+use App\Features\Newsletter\Listeners\AddContactToNewsletter;
 use App\Features\Pages\Observers\BookObserver;
 use App\Features\Pages\Observers\PostObserver;
 use App\Models\Book;
 use App\Models\CartItem;
 use App\Models\Post;
 use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -55,6 +57,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Event::listen(Login::class, MergeGuestCartOnLogin::class);
+        Event::listen(Registered::class, AddContactToNewsletter::class);
         Event::listen(OrderPaid::class, SendOrderConfirmationEmail::class);
 
         Event::listen(function (SocialiteWasCalled $event) {

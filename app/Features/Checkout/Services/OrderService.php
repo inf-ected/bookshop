@@ -10,6 +10,7 @@ use App\Features\Cart\Services\CartService;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class OrderService
 {
@@ -26,7 +27,7 @@ class OrderService
      * if Stripe session creation subsequently fails.
      *
      * @throws EmptyCartException if the cart is empty
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function createFromCart(User $user, string $sessionId): Order
     {

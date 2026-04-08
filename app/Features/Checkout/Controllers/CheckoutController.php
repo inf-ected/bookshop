@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Stripe\Exception\ApiErrorException;
+use Throwable;
 
 class CheckoutController extends Controller
 {
@@ -28,6 +29,8 @@ class CheckoutController extends Controller
      * Create a Stripe checkout session and redirect to Stripe.
      *
      * Rule 27: Order is created BEFORE Stripe redirect.
+     *
+     * @throws Throwable
      */
     public function store(Request $request): RedirectResponse
     {

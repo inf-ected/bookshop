@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use InvalidArgumentException;
+use Throwable;
 
 class OrderController extends Controller
 {
@@ -42,6 +43,9 @@ class OrderController extends Controller
         return view('admin.orders.show', compact('order'));
     }
 
+    /**
+     * @throws Throwable
+     */
     public function refund(Order $order): RedirectResponse
     {
         try {

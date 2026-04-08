@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use InvalidArgumentException;
+use Throwable;
 
 class BookController extends Controller
 {
@@ -31,6 +32,9 @@ class BookController extends Controller
         return view('admin.books.create');
     }
 
+    /**
+     * @throws Throwable
+     */
     public function store(StoreBookRequest $request): RedirectResponse
     {
         $book = $this->bookAdminService->createBook(
@@ -49,6 +53,9 @@ class BookController extends Controller
         return view('admin.books.edit', compact('book'));
     }
 
+    /**
+     * @throws Throwable
+     */
     public function update(UpdateBookRequest $request, Book $book): RedirectResponse
     {
         try {

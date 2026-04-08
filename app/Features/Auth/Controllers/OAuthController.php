@@ -31,6 +31,9 @@ class OAuthController extends Controller
         return Socialite::driver($provider)->redirect();
     }
 
+    /**
+     * @throws Throwable
+     */
     public function callback(string $provider): RedirectResponse
     {
         if (! OauthProvider::tryFrom($provider)) {
@@ -92,6 +95,9 @@ class OAuthController extends Controller
         return view('auth.complete-registration');
     }
 
+    /**
+     * @throws Throwable
+     */
     public function completeRegistration(CompleteRegistrationRequest $request): RedirectResponse
     {
         if (! session()->has('oauth_pending')) {

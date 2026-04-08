@@ -167,6 +167,19 @@ class BookAdminService
     }
 
     /**
+     * Toggle the book's availability for sale.
+     * Can always be toggled regardless of purchase history (unlike draft/published).
+     * Only meaningful for published books — draft books are never available.
+     */
+    public function toggleAvailability(Book $book): Book
+    {
+        $book->is_available = ! $book->is_available;
+        $book->save();
+
+        return $book;
+    }
+
+    /**
      * Toggle the book's featured flag.
      */
     public function toggleFeatured(Book $book): Book

@@ -107,4 +107,11 @@ class BookController extends Controller
 
         return response()->json(['is_featured' => $book->is_featured]);
     }
+
+    public function toggleAvailability(Book $book): JsonResponse
+    {
+        $this->bookAdminService->toggleAvailability($book);
+
+        return response()->json(['is_available' => $book->is_available]);
+    }
 }

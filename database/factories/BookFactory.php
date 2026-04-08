@@ -33,6 +33,7 @@ class BookFactory extends Factory
             'epub_path' => null,
             'status' => BookStatus::Draft,
             'is_featured' => false,
+            'is_available' => true,
             'sort_order' => fake()->numberBetween(0, 100),
         ];
     }
@@ -56,6 +57,13 @@ class BookFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'is_featured' => true,
+        ]);
+    }
+
+    public function unavailable(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_available' => false,
         ]);
     }
 }

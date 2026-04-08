@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Storage;
 /**
  * @property BookStatus $status
  * @property bool $is_featured
+ * @property bool $is_available
  * @property int $price
  * @property-read string|null $cover_url
  * @property-read string|null $cover_thumb_url
@@ -38,6 +39,7 @@ class Book extends Model
         'epub_path',
         'status',
         'is_featured',
+        'is_available',
         'sort_order',
     ];
 
@@ -46,6 +48,7 @@ class Book extends Model
         return [
             'status' => BookStatus::class,
             'is_featured' => 'boolean',
+            'is_available' => 'boolean',
             'price' => 'integer',
         ];
     }
@@ -73,9 +76,13 @@ class Book extends Model
         return Storage::disk('s3-public')->url($this->cover_thumb_path);
     }
 
+    /**
+     * Scope for books visible in the public catalog:
+     * published AND available for sale.
+     */
     public function scopePublished(Builder $query): Builder
     {
-        return $query->where('status', BookStatus::Published);
+        return $query->where('status', BookStatus::Published)->where('is_available', true);
     }
 
     public function scopeFeatured(Builder $query): Builder
@@ -119,5 +126,10 @@ class Book extends Model
     public function isPublished(): bool
     {
         return $this->status === BookStatus::Published;
+    }
+
+    public function isAvailable(): bool
+    {
+        return $this->isPublished() && $this->is_available;
     }
 }

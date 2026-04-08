@@ -114,6 +114,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::delete('/books/{book}', [AdminBookController::class, 'destroy'])->name('books.destroy');
     Route::patch('/books/{book}/toggle-status', [AdminBookController::class, 'toggleStatus'])->name('books.toggle-status');
     Route::patch('/books/{book}/toggle-featured', [AdminBookController::class, 'toggleFeatured'])->name('books.toggle-featured');
+    Route::patch('/books/{book}/toggle-availability', [AdminBookController::class, 'toggleAvailability'])->name('books.toggle-availability');
 
     Route::get('/posts', [AdminPostController::class, 'index'])->name('posts.index');
     Route::get('/posts/create', [AdminPostController::class, 'create'])->name('posts.create');

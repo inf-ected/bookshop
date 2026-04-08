@@ -22,43 +22,49 @@ class NewsletterSubscribeTest extends TestCase
         // Individual tests override this mock with specific expectations.
         $this->mock(NewsletterService::class, function (MockInterface $mock): void {
             $mock->shouldReceive('addContact')->byDefault();
+            $mock->shouldReceive('removeContact')->byDefault();
         });
     }
 
     // -------------------------------------------------------------------------
-    // Public subscribe endpoint
+    // Settings toggle
     // -------------------------------------------------------------------------
 
-    public function test_user_can_subscribe_with_valid_email(): void
+    public function test_user_can_subscribe_via_settings_toggle(): void
     {
-        $this->mock(NewsletterService::class, function (MockInterface $mock): void {
-            $mock->shouldReceive('addContact')
-                ->once()
-                ->with('subscriber@example.com', '');
+        $user = User::factory()->create(['newsletter_consent' => false]);
+
+        $this->mock(NewsletterService::class, function (MockInterface $mock) use ($user): void {
+            $mock->shouldReceive('addContact')->once()->with($user->email, $user->name);
         });
 
-        $response = $this->post('/newsletter/subscribe', [
-            'email' => 'subscriber@example.com',
-        ]);
+        $response = $this->actingAs($user)->post(route('cabinet.settings.newsletter'));
 
-        $response->assertRedirect();
-        $response->assertSessionHas('newsletter_success');
+        $response->assertRedirect(route('cabinet.settings'));
+        $response->assertSessionHas('status', 'newsletter-subscribed');
+        $this->assertTrue($user->fresh()->newsletter_consent);
     }
 
-    public function test_subscribe_requires_valid_email(): void
+    public function test_user_can_unsubscribe_via_settings_toggle(): void
     {
-        $response = $this->post('/newsletter/subscribe', [
-            'email' => 'not-an-email',
-        ]);
+        $user = User::factory()->create(['newsletter_consent' => true]);
 
-        $response->assertSessionHasErrors('email');
+        $this->mock(NewsletterService::class, function (MockInterface $mock) use ($user): void {
+            $mock->shouldReceive('removeContact')->once()->with($user->email);
+        });
+
+        $response = $this->actingAs($user)->post(route('cabinet.settings.newsletter'));
+
+        $response->assertRedirect(route('cabinet.settings'));
+        $response->assertSessionHas('status', 'newsletter-unsubscribed');
+        $this->assertFalse($user->fresh()->newsletter_consent);
     }
 
-    public function test_subscribe_requires_email_field(): void
+    public function test_newsletter_toggle_requires_authentication(): void
     {
-        $response = $this->post('/newsletter/subscribe', []);
+        $response = $this->post(route('cabinet.settings.newsletter'));
 
-        $response->assertSessionHasErrors('email');
+        $response->assertRedirect(route('login'));
     }
 
     // -------------------------------------------------------------------------

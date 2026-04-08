@@ -20,7 +20,6 @@ use App\Features\Catalog\Controllers\HomeController;
 use App\Features\Checkout\Controllers\CheckoutController;
 use App\Features\Checkout\Controllers\WebhookController;
 use App\Features\Download\Controllers\DownloadController;
-use App\Features\Newsletter\Controllers\NewsletterController;
 use App\Features\Pages\Controllers\SitemapController;
 use App\Features\Pages\Controllers\StaticPageController;
 use Illuminate\Support\Facades\Route;
@@ -56,11 +55,6 @@ foreach ($staticPages as $page) {
         ->name("static.{$page}")
         ->defaults('page', $page);
 }
-
-// Newsletter subscription (public, rate limited)
-Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])
-    ->middleware('throttle:5,1')
-    ->name('newsletter.subscribe');
 
 // Cart routes (guests and authenticated users)
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
@@ -104,6 +98,7 @@ Route::middleware(['auth', 'verified'])->prefix('cabinet')->name('cabinet.')->gr
     Route::get('/settings', [SettingsController::class, 'edit'])->name('settings');
     Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
+    Route::post('/settings/newsletter', [SettingsController::class, 'toggleNewsletter'])->name('settings.newsletter');
     Route::post('/settings/oauth/{provider}', [SettingsController::class, 'linkProvider'])->name('settings.oauth.link');
     Route::delete('/settings/oauth/{provider}', [SettingsController::class, 'unlinkProvider'])->name('settings.oauth.unlink');
 });

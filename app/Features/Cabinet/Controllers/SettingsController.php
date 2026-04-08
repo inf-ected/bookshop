@@ -9,6 +9,7 @@ use App\Features\Auth\Services\OAuthService;
 use App\Features\Cabinet\Notifications\PasswordChangedNotification;
 use App\Features\Cabinet\Requests\UpdatePasswordRequest;
 use App\Features\Cabinet\Requests\UpdateProfileRequest;
+use App\Features\Newsletter\Services\NewsletterService;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -18,10 +19,14 @@ use Illuminate\View\View;
 use Laravel\Socialite\Facades\Socialite;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 class SettingsController extends Controller
 {
-    public function __construct(private readonly OAuthService $oauthService) {}
+    public function __construct(
+        private readonly OAuthService $oauthService,
+        private readonly NewsletterService $newsletterService,
+    ) {}
 
     /**
      * Show profile and settings page.
@@ -80,6 +85,36 @@ class SettingsController extends Controller
         session()->put('oauth_link_intent', true);
 
         return Socialite::driver($provider)->redirect();
+    }
+
+    /**
+     * Toggle newsletter consent for the current user.
+     * Syncs the change to Resend Audiences — errors are caught and shown as flash.
+     *
+     * @throws Throwable
+     */
+    public function toggleNewsletter(Request $request): RedirectResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        $newConsent = ! $user->newsletter_consent;
+
+        try {
+            if ($newConsent) {
+                $this->newsletterService->addContact($user->email, $user->name);
+            } else {
+                $this->newsletterService->removeContact($user->email);
+            }
+        } catch (Throwable) {
+            return redirect()->route('cabinet.settings')
+                ->with('status', 'newsletter-error');
+        }
+
+        $user->update(['newsletter_consent' => $newConsent]);
+
+        return redirect()->route('cabinet.settings')
+            ->with('status', $newConsent ? 'newsletter-subscribed' : 'newsletter-unsubscribed');
     }
 
     /**

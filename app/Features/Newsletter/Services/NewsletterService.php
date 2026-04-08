@@ -74,6 +74,33 @@ class NewsletterService
     }
 
     /**
+     * Remove a contact from the configured Resend audience.
+     *
+     * Silently logs a warning and returns early if audience_id is not configured.
+     *
+     * @throws Throwable
+     */
+    public function removeContact(string $email): void
+    {
+        $audienceId = config('services.resend.audience_id');
+
+        if (empty($audienceId)) {
+            Log::warning('NewsletterService::removeContact called but RESEND_AUDIENCE_ID is not configured.');
+
+            return;
+        }
+
+        try {
+            $this->resend->contacts->remove($email);
+        } catch (Throwable $e) {
+            Log::error('NewsletterService::removeContact failed.', [
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
      * Get the number of contacts in the configured Resend audience.
      * Returns null if audience is not configured or API call fails.
      */

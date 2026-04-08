@@ -171,7 +171,47 @@
             </section>
         @endif
 
-        {{-- ── Section 3: OAuth Providers ─────────────────────────────────── --}}
+        {{-- ── Section 3: Newsletter ───────────────────────────────────────── --}}
+        <section class="bg-white border border-border-subtle rounded-xl p-6">
+
+            <h2 class="font-serif text-lg text-text-primary mb-1">Рассылка</h2>
+            <p class="text-sm text-text-muted font-sans mb-5">Получайте уведомления о новых книгах и акциях.</p>
+
+            @if(session('status') === 'newsletter-subscribed')
+                <div class="mb-4 px-4 py-3 bg-success-light border border-success-border rounded-lg text-sm text-success font-sans">
+                    Вы подписались на рассылку.
+                </div>
+            @elseif(session('status') === 'newsletter-unsubscribed')
+                <div class="mb-4 px-4 py-3 bg-surface-muted border border-border-subtle rounded-lg text-sm text-text-muted font-sans">
+                    Вы отписались от рассылки.
+                </div>
+            @elseif(session('status') === 'newsletter-error')
+                <div class="mb-4 px-4 py-3 bg-error-light border border-error-border rounded-lg text-sm text-error font-sans">
+                    Не удалось изменить настройки рассылки. Попробуйте позже.
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('cabinet.settings.newsletter') }}" class="flex items-center justify-between">
+                @csrf
+                <div>
+                    <p class="text-sm font-sans font-medium text-text-primary">
+                        {{ $user->newsletter_consent ? 'Вы подписаны на рассылку' : 'Вы не подписаны на рассылку' }}
+                    </p>
+                </div>
+                <button
+                    type="submit"
+                    class="px-4 py-2 text-sm font-sans font-medium rounded-lg transition
+                        {{ $user->newsletter_consent
+                            ? 'border border-border-subtle text-text-muted hover:text-error hover:border-error-border'
+                            : 'bg-brand-700 text-white hover:bg-brand-800' }}"
+                >
+                    {{ $user->newsletter_consent ? 'Отписаться' : 'Подписаться' }}
+                </button>
+            </form>
+
+        </section>
+
+        {{-- ── Section 4: OAuth Providers ─────────────────────────────────── --}}
         <section class="bg-white border border-border-subtle rounded-xl p-6">
 
             <h2 class="font-serif text-lg text-text-primary mb-1">Связанные аккаунты</h2>

@@ -26,6 +26,7 @@ class OrderService
      * if Stripe session creation subsequently fails.
      *
      * @throws EmptyCartException if the cart is empty
+     * @throws \Throwable
      */
     public function createFromCart(User $user, string $sessionId): Order
     {

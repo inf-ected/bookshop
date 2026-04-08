@@ -15,6 +15,8 @@ class OAuthService
      * Handle OAuth callback: find or create user, link provider.
      *
      * @return array{action: 'login'|'needs_email', user: ?User, pendingData: ?array<string, mixed>}
+     *
+     * @throws \Throwable
      */
     public function handleCallback(string $provider, SocialiteUser $socialiteUser): array
     {
@@ -79,6 +81,8 @@ class OAuthService
      * Complete registration for OAuth user without email.
      *
      * @param  array<string, mixed>  $pendingData
+     *
+     * @throws \Throwable
      */
     public function completeRegistration(string $email, array $pendingData): User
     {
@@ -110,6 +114,8 @@ class OAuthService
 
     /**
      * Link an OAuth provider to the currently authenticated user via Socialite token.
+     *
+     * @throws \RuntimeException if the provider is already linked to another user
      */
     public function linkProvider(User $user, string $provider, SocialiteUser $socialiteUser): OAuthProvider
     {
@@ -136,6 +142,8 @@ class OAuthService
      * Unlink an OAuth provider from the user's account.
      *
      * Rule 45: cannot unlink last provider if user has no password.
+     *
+     * @throws \RuntimeException if unlinking would leave the user with no login method
      */
     public function unlinkProvider(User $user, string $provider): void
     {

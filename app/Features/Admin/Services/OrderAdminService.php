@@ -14,6 +14,9 @@ class OrderAdminService
     /**
      * Refund an order.
      * Rule 80: single DB transaction — sets status=Refunded and revokes all linked UserBook records.
+     *
+     * @throws \InvalidArgumentException if the order is not in Paid status
+     * @throws \Throwable
      */
     public function refund(Order $order): void
     {

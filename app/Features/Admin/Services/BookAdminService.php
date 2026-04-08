@@ -21,6 +21,8 @@ class BookAdminService
      * the epub upload job if an epub file is provided.
      *
      * @param  array<string, mixed>  $data  Validated form data (price in rubles)
+     *
+     * @throws \Throwable
      */
     public function createBook(
         array $data,

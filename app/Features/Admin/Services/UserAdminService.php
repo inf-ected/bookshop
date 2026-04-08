@@ -15,7 +15,7 @@ class UserAdminService
      * Ban a user by setting banned_at to now.
      * Rule 77: admins cannot be banned.
      *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function ban(User $user): void
     {

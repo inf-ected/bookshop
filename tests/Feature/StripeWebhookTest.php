@@ -26,8 +26,11 @@ class StripeWebhookTest extends TestCase
     {
         parent::setUp();
 
-        // Use a test webhook secret so we can sign requests in tests
-        config(['services.stripe.webhook_secret' => $this->webhookSecret]);
+        // Use test credentials so StripePaymentProvider passes its config guards
+        config([
+            'services.stripe.secret' => 'sk_test_fake',
+            'services.stripe.webhook_secret' => $this->webhookSecret,
+        ]);
     }
 
     /**

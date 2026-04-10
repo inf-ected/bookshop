@@ -77,7 +77,7 @@ Route::middleware('guest')->group(function () {
 
 // Checkout routes (auth + verified)
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:checkout')->name('checkout.store');
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
     Route::get('/checkout/status/{order}', [CheckoutController::class, 'status'])->name('checkout.status');
 });

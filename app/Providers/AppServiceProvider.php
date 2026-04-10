@@ -49,6 +49,14 @@ class AppServiceProvider extends ServiceProvider
         Book::observe(BookObserver::class);
         Post::observe(PostObserver::class);
 
+        RateLimiter::for('login', function (Request $request) {
+            return Limit::perMinute(10)->by($request->ip());
+        });
+
+        RateLimiter::for('checkout', function (Request $request) {
+            return Limit::perMinute(5)->by(optional($request->user())->id ?: $request->ip());
+        });
+
         RateLimiter::for('download', function (Request $request) {
             $book = $request->route('book');
             $bookKey = $book instanceof Book ? $book->id : (string) $book;

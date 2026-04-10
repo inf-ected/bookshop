@@ -21,10 +21,14 @@ use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\Stripe;
 use Stripe\Webhook;
+use Throwable;
 use UnexpectedValueException;
 
-class StripePaymentProvider implements PaymentProvider, SupportsWebhooks
+readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhooks
 {
+    /**
+     * @throws Throwable
+     */
     public function __construct(private readonly OrderService $orderService)
     {
         $secret = config('services.stripe.secret');
@@ -103,7 +107,7 @@ class StripePaymentProvider implements PaymentProvider, SupportsWebhooks
      * Rule 30: idempotency via order_transactions — skip if already paid.
      *
      * @throws SignatureVerificationException
-     * @throws UnexpectedValueException
+     * @throws UnexpectedValueException|Throwable
      */
     public function handleWebhook(string $payload, string $signature): void
     {
@@ -190,6 +194,8 @@ class StripePaymentProvider implements PaymentProvider, SupportsWebhooks
     /**
      * Process an expired Stripe Checkout session.
      * Marks the transaction and order as failed if still pending.
+     *
+     * @throws Throwable
      */
     private function handleSessionExpired(Session $session): void
     {

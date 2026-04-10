@@ -17,9 +17,9 @@ class SecurityHeaders
         $s3PublicOrigin = $this->extractOrigin(config('filesystems.disks.s3-public.url', ''));
 
         $isLocal = app()->isLocal();
-        $viteOrigin = $isLocal
-            ? ' '.$this->extractOrigin(config('app.vite_dev_server_url', 'http://localhost:5173'))
-            : '';
+        // HTTP origin for script/style/font directives; WebSocket added separately for connect-src.
+        $viteHttp = $isLocal ? ' http://localhost:5173' : '';
+        $viteConnect = $isLocal ? ' http://localhost:5173 ws://localhost:5173' : '';
 
         // Alpine.js uses new AsyncFunction() in Vite dev mode — requires unsafe-eval in local only.
         $unsafeEval = $isLocal ? " 'unsafe-eval'" : '';
@@ -31,11 +31,11 @@ class SecurityHeaders
             'Content-Security-Policy',
             implode('; ', [
                 "default-src 'self'",
-                "script-src 'self' 'unsafe-inline'{$unsafeEval} https://www.googletagmanager.com https://www.google-analytics.com https://js.stripe.com{$viteOrigin}",
-                "style-src 'self' 'unsafe-inline' https://fonts.bunny.net{$viteOrigin}",
+                "script-src 'self' 'unsafe-inline'{$unsafeEval} https://www.googletagmanager.com https://www.google-analytics.com https://js.stripe.com{$viteHttp}",
+                "style-src 'self' 'unsafe-inline' https://fonts.bunny.net{$viteHttp}",
                 "img-src 'self' data: {$s3PublicOrigin}",
-                "font-src 'self' https://fonts.bunny.net{$viteOrigin}",
-                "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://api.stripe.com{$viteOrigin} ws://localhost:5173",
+                "font-src 'self' https://fonts.bunny.net{$viteHttp}",
+                "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://api.stripe.com{$viteConnect}",
                 "frame-ancestors 'none'",
             ])
         );

@@ -66,6 +66,11 @@ class Order extends Model
 
     /**
      * The single active/latest transaction for this order.
+     * Safe while one checkout = one order = one transaction.
+     *
+     * TODO: when checkout is refactored to reuse pending orders (multiple
+     * transactions per order), replace latestOfMany() with priority-based
+     * selection (succeeded > failed > expired > pending).
      *
      * @return HasOne<OrderTransaction, $this>
      */

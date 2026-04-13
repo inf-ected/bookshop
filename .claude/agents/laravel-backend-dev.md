@@ -290,7 +290,6 @@ One branch per phase:
 | 7 | `feature/user-dashboard` |
 | 8 | `feature/blog` |
 | 9 | `feature/seo` |
-| 10 | `feature/analytics` |
 | 11 | `feature/admin-content` |
 | 12 | `feature/hardening` |
 

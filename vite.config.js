@@ -7,6 +7,8 @@ export default defineConfig({
         // Bind to all interfaces so the Vite dev server is reachable from
         // outside the Docker container (browser connects via localhost:5173).
         host: '0.0.0.0',
+        origin: 'http://localhost:5173',
+        cors: true,
     },
     plugins: [
         tailwindcss(),

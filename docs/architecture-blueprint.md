@@ -927,7 +927,7 @@ Laravel's default `App\Http\Controllers\Controller`. No custom base controller n
 |------|---------|
 | `config/services.php` | Add Stripe keys (secret, publishable, webhook_secret); add OAuth provider credentials (google, vk, instagram, facebook) |
 | `config/filesystems.php` | Add `s3-public` disk (covers) and `s3-private` disk (epubs) |
-| `config/bookshop.php` | Custom config: `download_url_ttl` (default 300), `analytics_events` (allowed event names list), `max_books_per_page` |
+| `config/bookshop.php` | Custom config: `download_url_ttl` (default 300), `max_books_per_page` |
 | `config/cache.php` | Ensure Redis is default store (standard Laravel config) |
 | `config/queue.php` | Ensure Redis is default connection (standard Laravel config) |
 
@@ -939,7 +939,6 @@ Laravel's default `App\Http\Controllers\Controller`. No custom base controller n
 | `payments` | ProcessPaymentConfirmation, order status transitions | High |
 | `uploads` | ProcessBookFileUpload, OptimizeCoverImage | Low |
 | `emails` | SendOrderConfirmationEmail, all queued mail | Normal |
-| `analytics` | RecordAnalyticsEvent | Low |
 
 ### Cache Key Naming Convention
 
@@ -989,10 +988,9 @@ Complete ordered list of all migrations across all phases:
 | 7 | 2026_03_20_000007_create_user_books_table | 5 | user_books |
 | 8 | 2026_03_20_000008_create_download_logs_table | 6 | download_logs |
 | 9 | 2026_03_20_000009_create_posts_table | 8 | posts (incl. cover_thumb_path, HTML body) |
-| 10 | 2026_03_20_000010_create_analytics_events_table | 10 | analytics_events |
 | 11 | 2026_03_20_000011_create_newsletter_subscribers_table | 11 | newsletter_subscribers |
 | 12 | 2026_03_20_000012_create_static_pages_table | 11 | static_pages |
-| 13 | 2026_03_20_000013_add_performance_indexes | 12 | orders, download_logs, analytics_events |
+| 13 | 2026_03_20_000013_add_performance_indexes | 12 | orders, download_logs |
 
 Note: Laravel's default migrations (users, password_reset_tokens, sessions, cache, jobs, failed_jobs) run before all of the above.
 
@@ -1107,7 +1105,7 @@ Note: Laravel's default migrations (users, password_reset_tokens, sessions, cach
 
 ### Phase 12 — Hardening
 
-69. Rate limiting applied to: auth routes (throttle:login), download endpoint (throttle:download), analytics endpoint (throttle:analytics), checkout (throttle:checkout).
+69. Rate limiting applied to: auth routes (throttle:login), download endpoint (throttle:download), checkout (throttle:checkout). Custom server-side analytics deferred — GA4 covers all reporting needs (Rules 61–63).
 70. Security headers applied globally via SecurityHeaders middleware.
 71. Redis cache invalidated via model observers — not TTL-only.
 72. Cover images are optimized on upload (resize to max dimensions, compress) via queued job.

@@ -25,7 +25,6 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
-use Laravel\Horizon\Horizon;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 use SocialiteProviders\VKontakte\Provider;
 
@@ -49,10 +48,6 @@ class AppServiceProvider extends ServiceProvider
     {
         Book::observe(BookObserver::class);
         Post::observe(PostObserver::class);
-
-        Horizon::auth(function (Request $request): bool {
-            return $request->user()?->isAdmin() ?? false;
-        });
 
         RateLimiter::for('login', function (Request $request) {
             return Limit::perMinute(10)->by($request->ip());

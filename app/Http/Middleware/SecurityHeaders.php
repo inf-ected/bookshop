@@ -14,7 +14,7 @@ class SecurityHeaders
     {
         $response = $next($request);
 
-        $s3PublicOrigin = $this->extractOrigin(config('filesystems.disks.s3-public.url', ''));
+        $s3PublicOrigin = $this->extractOrigin(config('filesystems.disks.s3-public.url') ?? '');
 
         $isLocal = app()->isLocal();
         // HTTP origin for script/style/font directives; WebSocket added separately for connect-src.

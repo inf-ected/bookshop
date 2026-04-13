@@ -27,6 +27,7 @@ class SecurityHeaders
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+        $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(self "https://js.stripe.com")');
         $response->headers->set(
             'Content-Security-Policy',
             implode('; ', [
@@ -46,7 +47,7 @@ class SecurityHeaders
     private function extractOrigin(string $url): string
     {
         if ($url === '') {
-            return "'self'";
+            return '';
         }
 
         $parsed = parse_url($url);

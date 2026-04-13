@@ -14,3 +14,6 @@ Artisan::command('inspire', function () {
 
 Schedule::command(CleanupCartsCommand::class)->daily();
 Schedule::command(ExpirePendingOrdersCommand::class)->everyFifteenMinutes();
+
+Schedule::command('backup:run --only-db')->dailyAt('03:00');
+Schedule::command('backup:clean')->dailyAt('02:00');

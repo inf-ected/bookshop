@@ -57,10 +57,6 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->user()?->id ?? $request->ip());
         });
 
-        RateLimiter::for('analytics', function (Request $request) {
-            return Limit::perMinute(60)->by($request->ip());
-        });
-
         RateLimiter::for('download', function (Request $request) {
             $book = $request->route('book');
             $bookKey = $book instanceof Book ? $book->id : (string) $book;

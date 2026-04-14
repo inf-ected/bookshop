@@ -95,7 +95,7 @@ class Book extends Model
 
     public function scopeOrdered(Builder $query): Builder
     {
-        return $query->orderBy('sort_order', 'asc');
+        return $query->orderBy('sort_order', 'asc')->orderBy('id', 'asc');
     }
 
     /** Cached result of Schema::hasTable('user_books') — populated once per request. */

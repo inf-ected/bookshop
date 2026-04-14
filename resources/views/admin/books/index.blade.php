@@ -71,6 +71,9 @@
                 <table class="w-full text-sm font-sans">
                     <thead>
                         <tr class="border-b border-border-subtle bg-surface-muted">
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-text-muted uppercase tracking-wider w-12">
+                                Поз.
+                            </th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-text-muted uppercase tracking-wider w-14">
                                 Обложка
                             </th>
@@ -97,6 +100,13 @@
                     <tbody class="divide-y divide-border-subtle">
                         @foreach ($books as $book)
                             <tr class="hover:bg-surface-muted transition">
+
+                                {{-- Sort order --}}
+                                <td class="px-4 py-3 text-center">
+                                    <span class="inline-block min-w-[1.5rem] px-1.5 py-0.5 text-xs font-mono font-medium text-text-muted bg-surface-muted border border-border-subtle rounded">
+                                        {{ $book->sort_order }}
+                                    </span>
+                                </td>
 
                                 {{-- Cover thumbnail --}}
                                 <td class="px-4 py-3">

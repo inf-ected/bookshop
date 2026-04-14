@@ -29,6 +29,7 @@ class ProcessPaymentConfirmation implements ShouldQueue
         public readonly int $orderId,
         public readonly string $paymentIntentId,
         public readonly string $sessionId,
+        public readonly string $provider = 'stripe',
     ) {
         $this->onQueue('payments');
     }
@@ -66,7 +67,7 @@ class ProcessPaymentConfirmation implements ShouldQueue
             // so the provider-specific data stays in order_transactions, not on orders.
             $transaction = OrderTransaction::query()
                 ->where('order_id', $this->orderId)
-                ->where('provider', 'stripe')
+                ->where('provider', $this->provider)
                 ->whereRaw("json_extract(provider_data, '$.session_id') = ?", [$this->sessionId])
                 ->first();
 
@@ -80,14 +81,31 @@ class ProcessPaymentConfirmation implements ShouldQueue
                 $transaction->save();
             }
 
-            // Rule 31: create user_books records for each order item
+            // Rule 31: create user_books records for each order item.
+            // If a revoked record exists for this user+book, restore it rather than
+            // leaving revoked_at set (firstOrCreate would find the revoked row and skip it).
             $order->load('items');
 
             foreach ($order->items as $item) {
-                UserBook::query()->firstOrCreate(
-                    ['user_id' => $order->user_id, 'book_id' => $item->book_id],
-                    ['order_id' => $order->id, 'granted_at' => now()],
-                );
+                $userBook = UserBook::query()
+                    ->where('user_id', $order->user_id)
+                    ->where('book_id', $item->book_id)
+                    ->first();
+
+                if ($userBook !== null) {
+                    // Restore a previously revoked (or already active) record.
+                    $userBook->order_id = $order->id;
+                    $userBook->granted_at = now();
+                    $userBook->revoked_at = null;
+                    $userBook->save();
+                } else {
+                    UserBook::query()->create([
+                        'user_id' => $order->user_id,
+                        'book_id' => $item->book_id,
+                        'order_id' => $order->id,
+                        'granted_at' => now(),
+                    ]);
+                }
             }
 
             // Rule 31: clear the user's cart by user_id (no session in queue context)

@@ -7,11 +7,13 @@ namespace App\Features\Checkout\Services;
 use App\Enums\OrderStatus;
 use App\Features\Checkout\Contracts\PaymentProvider;
 use App\Features\Checkout\Contracts\SupportsWebhooks;
+use App\Features\Checkout\Exceptions\PaymentException;
 use App\Features\Checkout\Jobs\ProcessPaymentConfirmation;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderTransaction;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -40,13 +42,30 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
         Stripe::setApiKey($secret);
     }
 
+    public function getName(): string
+    {
+        return 'stripe';
+    }
+
+    public function extractReturnSessionId(Request $request): ?string
+    {
+        $value = $request->query('session_id');
+
+        return is_string($value) ? $value : null;
+    }
+
+    /**
+     * No-op for Stripe — payment confirmation arrives via webhook, not on the return redirect.
+     */
+    public function handleReturn(Request $request, Order $order): void {}
+
     /**
      * Create a Stripe Checkout session for the given order and persist an
      * OrderTransaction record with all provider-specific data.
      *
      * @return array{id: string, url: string}
      *
-     * @throws ApiErrorException
+     * @throws PaymentException
      */
     public function createSession(Order $order, User $user): array
     {
@@ -67,17 +86,21 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
             ];
         })->values()->all();
 
-        $session = Session::create([
-            'mode' => 'payment',
-            'line_items' => $lineItems,
-            'success_url' => route('checkout.success').'?session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url' => route('cart.index'),
-            'client_reference_id' => (string) $order->id,
-            'customer_email' => $user->email,
-        ]);
+        try {
+            $session = Session::create([
+                'mode' => 'payment',
+                'line_items' => $lineItems,
+                'success_url' => route('checkout.success').'?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => route('cart.index'),
+                'client_reference_id' => (string) $order->id,
+                'customer_email' => $user->email,
+            ]);
+        } catch (ApiErrorException $e) {
+            throw PaymentException::fromThrowable($e);
+        }
 
         if ($session->url === null) {
-            throw new RuntimeException('Stripe did not return a checkout URL for session '.$session->id);
+            throw new PaymentException('Stripe did not return a checkout URL for session '.$session->id);
         }
 
         // Persist provider-specific data in order_transactions so it never leaks
@@ -106,16 +129,20 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
      * Rule 29: webhook is the source of truth for payment confirmation.
      * Rule 30: idempotency via order_transactions — skip if already paid.
      *
-     * @throws SignatureVerificationException
-     * @throws UnexpectedValueException|Throwable
+     * @throws PaymentException on signature verification failure or invalid payload
+     * @throws Throwable
      */
     public function handleWebhook(string $payload, string $signature): void
     {
-        $event = Webhook::constructEvent(
-            $payload,
-            $signature,
-            config('services.stripe.webhook_secret'),
-        );
+        try {
+            $event = Webhook::constructEvent(
+                $payload,
+                $signature,
+                config('services.stripe.webhook_secret'),
+            );
+        } catch (SignatureVerificationException|UnexpectedValueException $e) {
+            throw PaymentException::fromThrowable($e);
+        }
 
         Log::info('Stripe webhook received', ['type' => $event->type]);
 
@@ -188,6 +215,7 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
             $order->id,
             $paymentIntentId,
             $stripeSessionId,
+            $this->getName(),
         );
     }
 

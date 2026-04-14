@@ -6,6 +6,8 @@ namespace App\Providers;
 
 use App\Features\Cart\Listeners\MergeGuestCartOnLogin;
 use App\Features\Checkout\Contracts\PaymentProvider;
+use App\Features\Checkout\Contracts\SupportsWebhooks;
+use App\Features\Checkout\Controllers\WebhookController;
 use App\Features\Checkout\Events\OrderPaid;
 use App\Features\Checkout\Listeners\SendOrderConfirmationEmail;
 use App\Features\Checkout\Services\StripePaymentProvider;
@@ -39,6 +41,12 @@ class AppServiceProvider extends ServiceProvider
             PaymentProvider::class,
             StripePaymentProvider::class,
         );
+
+        // Bind SupportsWebhooks for WebhookController — currently Stripe only.
+        // When adding PayPal: add a separate contextual binding or introduce a provider registry.
+        $this->app->when(WebhookController::class)
+            ->needs(SupportsWebhooks::class)
+            ->give(StripePaymentProvider::class);
     }
 
     /**

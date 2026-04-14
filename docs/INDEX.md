@@ -66,6 +66,12 @@ Phase 12: indexes on orders, download_logs, analytics_events
 
 ---
 
+## Бэклог и дальнейшие планы
+
+→ [`backlog.md`](backlog.md) — все задачи после Phase 12: мелкие правки перед деплоем, технический долг, новые функции
+
+---
+
 ## Memory агентов
 
 | Файл | Что содержит |

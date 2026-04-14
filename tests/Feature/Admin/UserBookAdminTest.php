@@ -74,7 +74,7 @@ class UserBookAdminTest extends TestCase
 
         $this->actingAs($admin)
             ->post("/admin/users/{$user->id}/grant-book", [
-                'book_id' => $book->id,
+                'book_slug' => $book->slug,
                 'reason' => 'Тестовая причина',
             ])
             ->assertRedirect();
@@ -94,7 +94,7 @@ class UserBookAdminTest extends TestCase
 
         $this->actingAs($admin)
             ->post("/admin/users/{$user->id}/grant-book", [
-                'book_id' => $book->id,
+                'book_slug' => $book->slug,
             ]);
 
         $userBook = UserBook::query()
@@ -106,16 +106,44 @@ class UserBookAdminTest extends TestCase
         $this->assertNotNull($userBook->granted_at);
     }
 
-    public function test_grant_requires_valid_book_id(): void
+    public function test_grant_requires_valid_book_slug(): void
     {
         $admin = User::factory()->admin()->create();
         $user = User::factory()->create();
 
         $this->actingAs($admin)
             ->post("/admin/users/{$user->id}/grant-book", [
-                'book_id' => 99999,
+                'book_slug' => 'non-existent-slug',
             ])
-            ->assertSessionHasErrors('book_id');
+            ->assertSessionHasErrors('book_slug');
+    }
+
+    public function test_admin_can_grant_book_to_user_with_revoked_record(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+
+        UserBook::factory()->revoked()->create([
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->post("/admin/users/{$user->id}/grant-book", [
+                'book_slug' => $book->slug,
+                'reason' => 'Восстановление доступа',
+            ])
+            ->assertRedirect();
+
+        $userBook = UserBook::query()
+            ->where('user_id', $user->id)
+            ->where('book_id', $book->id)
+            ->firstOrFail();
+
+        $this->assertNull($userBook->revoked_at);
+        $this->assertNull($userBook->order_id);
+        $this->assertDatabaseCount('user_books', 1);
     }
 
     public function test_non_admin_cannot_grant_book(): void
@@ -126,7 +154,7 @@ class UserBookAdminTest extends TestCase
 
         $this->actingAs($regularUser)
             ->post("/admin/users/{$targetUser->id}/grant-book", [
-                'book_id' => $book->id,
+                'book_slug' => $book->slug,
             ])
             ->assertStatus(404);
     }

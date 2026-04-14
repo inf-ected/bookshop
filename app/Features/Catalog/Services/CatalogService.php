@@ -39,7 +39,7 @@ class CatalogService
      */
     public function getOwnedBookIds(User $user): SupportCollection
     {
-        return $user->userBooks()->pluck('book_id');
+        return $user->userBooks()->whereNull('revoked_at')->pluck('book_id');
     }
 
     /**
@@ -49,6 +49,6 @@ class CatalogService
      */
     public function isOwnedByUser(Book $book, User $user): bool
     {
-        return $user->userBooks()->where('book_id', $book->id)->exists();
+        return $user->userBooks()->where('book_id', $book->id)->whereNull('revoked_at')->exists();
     }
 }

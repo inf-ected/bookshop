@@ -890,6 +890,17 @@ Single migration replacing/adding atomic indexes:
 - Banner dismissed on accept; re-shown if localStorage is cleared
 - No backend changes required
 
+#### 12.6 — Adult Content Gate (backend + frontend)
+- `books.is_adult` boolean flag (default `false`); set by admin per book
+- `users.is_adult_verified` boolean flag (default `false`); persisted for authenticated users
+- `POST /age-verification` — public route (no auth required); sets `session('adult_consent')` for guests, additionally sets `is_adult_verified = true` in DB for authenticated users; returns JSON for XHR or redirect for form submissions
+- Server-side guard in `BookController::show()` and `BookController::fragment()`: if book is adult and user is unverified (session key absent for guests, `is_adult_verified = false` for authenticated) — renders `books/age-gate.blade.php` instead of the book content
+- `books/age-gate.blade.php` — no-JS fallback page: full-page card with a POST form to `/age-verification` and a "Back to catalog" link
+- Blade/Alpine component `<x-adult-content-gate>` — JS overlay (`fixed inset-0 z-50`) on `books/show.blade.php`; `init()` checks `is_adult_verified` (server-rendered via `@js()`) then `localStorage.getItem('adult_consent')`; `accept()` sets localStorage and calls `/age-verification` via fetch; `decline()` calls `window.history.back()`
+- "18+" badge on `<x-book-card>` when `$book->isAdult()`
+- Admin book create/edit forms include `is_adult` checkbox (follows `is_featured` pattern)
+- Tests: guest session flow, authenticated DB persist, admin `is_adult` CRUD
+
 ### Out of scope (backlog)
 - Redis cache (BookObserver, PostObserver, cache keys) — defer until post-deploy audit
 - Cover image optimization (`OptimizeCoverImage` job, `app:optimize-covers` command) — defer until book catalogue grows

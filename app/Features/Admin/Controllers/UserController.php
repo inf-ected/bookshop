@@ -6,6 +6,7 @@ namespace App\Features\Admin\Controllers;
 
 use App\Features\Admin\Services\UserAdminService;
 use App\Http\Controllers\Controller;
+use App\Models\Book;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,9 +37,12 @@ class UserController extends Controller
 
     public function show(User $user): View
     {
+        // Admin intentionally sees all user_books including revoked entries — do not add whereNull('revoked_at') here.
         $user->load(['orders.items.book', 'userBooks.book']);
 
-        return view('admin.users.show', compact('user'));
+        $books = Book::query()->ordered()->get(['id', 'title', 'slug']);
+
+        return view('admin.users.show', compact('user', 'books'));
     }
 
     public function ban(User $user): RedirectResponse

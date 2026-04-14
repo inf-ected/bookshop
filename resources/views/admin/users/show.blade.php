@@ -156,15 +156,17 @@
                         <form method="POST" action="{{ route('admin.users.grant-book', $user) }}" class="space-y-3">
                             @csrf
                             <div>
-                                <label class="block text-xs font-medium text-text-primary mb-1">ID книги <span class="text-error">*</span></label>
-                                <input
-                                    type="number"
-                                    name="book_id"
-                                    min="1"
+                                <label class="block text-xs font-medium text-text-primary mb-1">Книга <span class="text-error">*</span></label>
+                                <select
+                                    name="book_slug"
                                     required
-                                    placeholder="Введите ID книги"
                                     class="w-full px-3 py-2 rounded-lg border border-border-subtle text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-brand-500"
                                 >
+                                    <option value="">— выберите книгу —</option>
+                                    @foreach ($books as $book)
+                                        <option value="{{ $book->slug }}">{{ $book->title }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-text-primary mb-1">Причина</label>

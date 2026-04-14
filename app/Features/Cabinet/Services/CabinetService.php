@@ -19,6 +19,7 @@ class CabinetService
     {
         return $user->userBooks()
             ->with('book')
+            ->whereNull('revoked_at')
             ->latest()
             ->get();
     }

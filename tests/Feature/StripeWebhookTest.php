@@ -145,7 +145,8 @@ class StripeWebhookTest extends TestCase
         Queue::assertPushed(ProcessPaymentConfirmation::class, function ($job) use ($order): bool {
             return $job->orderId === $order->id
                 && $job->paymentIntentId === 'pi_test_intent_123'
-                && $job->sessionId === 'cs_test_valid_session';
+                && $job->sessionId === 'cs_test_valid_session'
+                && $job->provider === 'stripe';
         });
     }
 

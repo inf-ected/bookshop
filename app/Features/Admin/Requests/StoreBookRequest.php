@@ -53,6 +53,7 @@ class StoreBookRequest extends FormRequest
             'excerpt' => ['nullable', 'string', 'max:10000'],
             'fragment' => ['nullable', 'string', 'max:100000'],
             'is_featured' => ['boolean'],
+            'is_adult' => ['boolean'],
             'sort_order' => ['integer', 'min:0'],
         ];
     }

@@ -22,6 +22,7 @@ use Illuminate\Notifications\Notifiable;
  * @property string|null $password
  * @property UserRole $role
  * @property bool $newsletter_consent
+ * @property bool $is_adult_verified
  * @property Carbon|null $banned_at
  */
 class User extends Authenticatable implements MustVerifyEmail
@@ -39,6 +40,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'newsletter_consent',
+        'is_adult_verified',
     ];
 
     /**
@@ -63,6 +65,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'role' => UserRole::class,
             'newsletter_consent' => 'boolean',
+            'is_adult_verified' => 'boolean',
             'banned_at' => 'datetime',
         ];
     }

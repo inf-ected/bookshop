@@ -7,7 +7,7 @@
 <div class="flex flex-col bg-white rounded-lg border border-border-subtle overflow-hidden shadow-sm hover:shadow-md transition-shadow">
 
     {{-- Cover --}}
-    <a href="{{ route('books.show', $book) }}" class="block aspect-[2/3] overflow-hidden bg-surface-muted">
+    <a href="{{ route('books.show', $book) }}" class="relative block aspect-[2/3] overflow-hidden bg-surface-muted">
         @if($book->cover_thumb_url)
             <img
                 src="{{ $book->cover_thumb_url }}"
@@ -22,6 +22,12 @@
                     {{ mb_substr($book->title, 0, 2) }}
                 </span>
             </div>
+        @endif
+
+        @if($book->isAdult())
+            <span class="absolute top-2 right-2 px-1.5 py-0.5 text-xs font-sans font-bold leading-none text-white bg-error rounded">
+                18+
+            </span>
         @endif
     </a>
 

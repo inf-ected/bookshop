@@ -34,6 +34,7 @@ class BookFactory extends Factory
             'status' => BookStatus::Draft,
             'is_featured' => false,
             'is_available' => true,
+            'is_adult' => false,
             'sort_order' => fake()->numberBetween(0, 100),
         ];
     }
@@ -64,6 +65,13 @@ class BookFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'is_available' => false,
+        ]);
+    }
+
+    public function adult(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_adult' => true,
         ]);
     }
 }

@@ -309,6 +309,25 @@
                     @enderror
                 </div>
 
+                {{-- Adult content --}}
+                <div class="flex items-center gap-3">
+                    <input
+                        id="is_adult"
+                        type="checkbox"
+                        name="is_adult"
+                        value="1"
+                        @checked(old('is_adult'))
+                        class="w-4 h-4 rounded border-border-subtle text-brand-600 focus:ring-brand-500 cursor-pointer"
+                    >
+                    <label for="is_adult" class="text-sm text-text-primary cursor-pointer">
+                        Контент 18+
+                        <span class="text-xs text-text-subtle ml-1">— требует подтверждения возраста</span>
+                    </label>
+                    @error('is_adult')
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 {{-- Sort order --}}
                 <div>
                     <label for="sort_order" class="block text-sm font-medium text-text-primary mb-1.5">

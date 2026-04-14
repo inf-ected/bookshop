@@ -10,6 +10,7 @@ use App\Features\Admin\Controllers\OrderController as AdminOrderController;
 use App\Features\Admin\Controllers\PostController as AdminPostController;
 use App\Features\Admin\Controllers\UserBookController as AdminUserBookController;
 use App\Features\Admin\Controllers\UserController as AdminUserController;
+use App\Features\AgeVerification\Controllers\AgeVerificationController;
 use App\Features\Auth\Controllers\OAuthController;
 use App\Features\Blog\Controllers\PostController;
 use App\Features\Cabinet\Controllers\CabinetController;
@@ -74,6 +75,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/auth/complete-registration', [OAuthController::class, 'completeRegistration'])
         ->name('auth.complete-registration.store');
 });
+
+// Age verification (no auth required — guests use session, authenticated users persist to DB)
+Route::post('/age-verification', [AgeVerificationController::class, 'store'])
+    ->name('age-verification.store');
 
 // Checkout routes (auth + verified)
 Route::middleware(['auth', 'verified'])->group(function () {

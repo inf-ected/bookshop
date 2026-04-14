@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Storage;
  * @property BookStatus $status
  * @property bool $is_featured
  * @property bool $is_available
+ * @property bool $is_adult
  * @property int $price
  * @property-read string|null $cover_url
  * @property-read string|null $cover_thumb_url
@@ -40,6 +41,7 @@ class Book extends Model
         'status',
         'is_featured',
         'is_available',
+        'is_adult',
         'sort_order',
     ];
 
@@ -49,6 +51,7 @@ class Book extends Model
             'status' => BookStatus::class,
             'is_featured' => 'boolean',
             'is_available' => 'boolean',
+            'is_adult' => 'boolean',
             'price' => 'integer',
         ];
     }
@@ -131,5 +134,10 @@ class Book extends Model
     public function isAvailable(): bool
     {
         return $this->isPublished() && $this->is_available;
+    }
+
+    public function isAdult(): bool
+    {
+        return $this->is_adult;
     }
 }

@@ -74,7 +74,7 @@ class UserBookAdminTest extends TestCase
 
         $this->actingAs($admin)
             ->post("/admin/users/{$user->id}/grant-book", [
-                'book_id' => $book->id,
+                'book_slug' => $book->slug,
                 'reason' => 'Тестовая причина',
             ])
             ->assertRedirect();
@@ -94,7 +94,7 @@ class UserBookAdminTest extends TestCase
 
         $this->actingAs($admin)
             ->post("/admin/users/{$user->id}/grant-book", [
-                'book_id' => $book->id,
+                'book_slug' => $book->slug,
             ]);
 
         $userBook = UserBook::query()
@@ -106,16 +106,16 @@ class UserBookAdminTest extends TestCase
         $this->assertNotNull($userBook->granted_at);
     }
 
-    public function test_grant_requires_valid_book_id(): void
+    public function test_grant_requires_valid_book_slug(): void
     {
         $admin = User::factory()->admin()->create();
         $user = User::factory()->create();
 
         $this->actingAs($admin)
             ->post("/admin/users/{$user->id}/grant-book", [
-                'book_id' => 99999,
+                'book_slug' => 'non-existent-slug',
             ])
-            ->assertSessionHasErrors('book_id');
+            ->assertSessionHasErrors('book_slug');
     }
 
     public function test_non_admin_cannot_grant_book(): void

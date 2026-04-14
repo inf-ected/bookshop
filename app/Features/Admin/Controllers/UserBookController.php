@@ -33,7 +33,7 @@ class UserBookController extends Controller
 
     public function grant(GrantBookRequest $request, User $user): RedirectResponse
     {
-        $book = Book::query()->findOrFail($request->validated('book_id'));
+        $book = Book::query()->where('slug', $request->validated('book_slug'))->firstOrFail();
 
         try {
             $this->userBookAdminService->grant($user, $book, $request->validated('reason'));

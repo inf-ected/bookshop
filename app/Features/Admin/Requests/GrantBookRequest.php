@@ -11,7 +11,7 @@ class GrantBookRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'book_id' => ['required', 'integer', 'exists:books,id'],
+            'book_slug' => ['required', 'string', 'exists:books,slug'],
             'reason' => ['nullable', 'string', 'max:500'],
         ];
     }

@@ -6,13 +6,13 @@ namespace Tests\Feature;
 
 use App\Enums\OrderStatus;
 use App\Features\Checkout\Contracts\PaymentProvider;
+use App\Features\Checkout\Exceptions\PaymentException;
 use App\Models\Book;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderTransaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Stripe\Exception\InvalidRequestException;
 use Tests\TestCase;
 
 class CheckoutControllerTest extends TestCase
@@ -38,6 +38,11 @@ class CheckoutControllerTest extends TestCase
                 /** @param array{id: string, url: string} $session */
                 public function __construct(private readonly array $session) {}
 
+                public function getName(): string
+                {
+                    return 'stripe';
+                }
+
                 public function createSession(Order $order, User $user): array
                 {
                     OrderTransaction::query()->create([
@@ -50,6 +55,15 @@ class CheckoutControllerTest extends TestCase
 
                     return $this->session;
                 }
+
+                public function extractReturnSessionId(\Illuminate\Http\Request $request): ?string
+                {
+                    $value = $request->query('session_id');
+
+                    return is_string($value) ? $value : null;
+                }
+
+                public function handleReturn(\Illuminate\Http\Request $request, Order $order): void {}
             };
         });
     }
@@ -171,16 +185,22 @@ class CheckoutControllerTest extends TestCase
     // Stripe API failure
     // -------------------------------------------------------------------------
 
-    public function test_stripe_api_failure_marks_order_failed_and_redirects_to_cart(): void
+    public function test_payment_provider_failure_marks_order_failed_and_redirects_to_cart(): void
     {
-        // Override the fake with one that throws
+        // Override the fake with one that throws a PaymentException
         $this->app->bind(PaymentProvider::class, function () {
             return new class implements PaymentProvider
             {
+                public function getName(): string { return 'stripe'; }
+
                 public function createSession(Order $order, User $user): array
                 {
-                    throw new InvalidRequestException('No such customer');
+                    throw new PaymentException('Payment provider error');
                 }
+
+                public function extractReturnSessionId(\Illuminate\Http\Request $request): ?string { return null; }
+
+                public function handleReturn(\Illuminate\Http\Request $request, Order $order): void {}
             };
         });
 

@@ -62,6 +62,21 @@ class CartTest extends TestCase
         $service->addItem($book, $user, 'session-abc');
     }
 
+    public function test_add_item_allows_adding_revoked_book_to_cart(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+        UserBook::factory()->revoked()->create(['user_id' => $user->id, 'book_id' => $book->id]);
+
+        $service = app(CartService::class);
+        $service->addItem($book, $user, 'session-abc');
+
+        $this->assertDatabaseHas('cart_items', [
+            'book_id' => $book->id,
+            'user_id' => $user->id,
+        ]);
+    }
+
     public function test_duplicate_cart_items_are_handled_gracefully_for_guest(): void
     {
         $book = Book::factory()->create();
@@ -190,6 +205,21 @@ class CartTest extends TestCase
 
         $this->assertDatabaseHas('cart_items', ['user_id' => $user->id, 'book_id' => $book->id]);
         $this->assertDatabaseMissing('cart_items', ['session_id' => 'session-guest']);
+    }
+
+    public function test_merge_guest_cart_includes_book_user_had_revoked(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+
+        // User's access was revoked — they should be able to re-purchase
+        UserBook::factory()->revoked()->create(['user_id' => $user->id, 'book_id' => $book->id]);
+        CartItem::factory()->forGuest()->create(['book_id' => $book->id, 'session_id' => 'session-guest']);
+
+        $service = app(CartService::class);
+        $service->mergeGuestCart($user, 'session-guest');
+
+        $this->assertDatabaseHas('cart_items', ['user_id' => $user->id, 'book_id' => $book->id]);
     }
 
     public function test_merge_guest_cart_discards_duplicates(): void

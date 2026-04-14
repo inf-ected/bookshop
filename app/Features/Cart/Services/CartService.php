@@ -27,6 +27,7 @@ class CartService
             $alreadyOwned = UserBook::query()
                 ->where('user_id', $user->id)
                 ->where('book_id', $book->id)
+                ->whereNull('revoked_at')
                 ->exists();
 
             if ($alreadyOwned) {
@@ -94,6 +95,7 @@ class CartService
             $alreadyOwned = UserBook::query()
                 ->where('user_id', $user->id)
                 ->where('book_id', $guestItem->book_id)
+                ->whereNull('revoked_at')
                 ->exists();
 
             if (! $alreadyOwned) {

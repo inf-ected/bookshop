@@ -73,6 +73,11 @@ class CheckoutController extends Controller
     public function success(Request $request): View|RedirectResponse
     {
         $provider = session('payment_provider', $this->paymentProvider->getName());
+
+        // extractReturnSessionId() is intentionally delegated to the injected singleton.
+        // The session value above is used only to scope the transaction lookup by provider name.
+        // When a second provider (e.g. PayPal) is added, this controller will need to resolve
+        // the correct provider instance by name before calling extractReturnSessionId/handleReturn.
         $sessionId = $this->paymentProvider->extractReturnSessionId($request);
 
         if ($sessionId) {

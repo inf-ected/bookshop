@@ -126,7 +126,7 @@ class UserBookAdminTest extends TestCase
 
         $this->actingAs($regularUser)
             ->post("/admin/users/{$targetUser->id}/grant-book", [
-                'book_id' => $book->id,
+                'book_slug' => $book->slug,
             ])
             ->assertStatus(404);
     }

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 
 class WebhookController extends Controller
 {
-    public function __construct(private readonly SupportsWebhooks $stripeProvider) {}
+    public function __construct(private readonly SupportsWebhooks $webhookHandler) {}
 
     /**
      * Handle Stripe webhook events.
@@ -24,7 +24,7 @@ class WebhookController extends Controller
     public function handleStripe(Request $request): Response
     {
         try {
-            $this->stripeProvider->handleWebhook(
+            $this->webhookHandler->handleWebhook(
                 $request->getContent(),
                 $request->header('Stripe-Signature', ''),
             );

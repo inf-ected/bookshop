@@ -32,6 +32,10 @@
 
 @section('content')
 
+@if($book->isAdult())
+    <x-adult-content-gate />
+@endif
+
 <div class="max-w-5xl mx-auto px-4 py-10">
 
     {{-- Breadcrumb --}}

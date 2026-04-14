@@ -32,6 +32,10 @@ class BookController extends Controller
             abort(404);
         }
 
+        if ($book->isAdult() && ! $this->isAdultVerified($request)) {
+            return view('books.age-gate', compact('book'));
+        }
+
         $user = $request->user();
         $isOwned = $user
             ? $this->catalogService->isOwnedByUser($book, $user)
@@ -40,12 +44,25 @@ class BookController extends Controller
         return view('books.show', compact('book', 'isOwned'));
     }
 
-    public function fragment(Book $book): View
+    public function fragment(Request $request, Book $book): View
     {
         if ($book->status !== BookStatus::Published) {
             abort(404);
         }
 
+        if ($book->isAdult() && ! $this->isAdultVerified($request)) {
+            return view('books.age-gate', compact('book'));
+        }
+
         return view('books.fragment', compact('book'));
+    }
+
+    private function isAdultVerified(Request $request): bool
+    {
+        if ($user = $request->user()) {
+            return $user->is_adult_verified;
+        }
+
+        return session('adult_consent') === 'accepted';
     }
 }

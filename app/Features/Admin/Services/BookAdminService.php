@@ -43,6 +43,7 @@ class BookAdminService
             $book->excerpt = $data['excerpt'] ?? null;
             $book->fragment = $data['fragment'] ?? null;
             $book->is_featured = (bool) ($data['is_featured'] ?? false);
+            $book->is_adult = (bool) ($data['is_adult'] ?? false);
             $book->sort_order = (int) ($data['sort_order'] ?? 0);
             $book->save();
 
@@ -111,6 +112,7 @@ class BookAdminService
             $book->excerpt = $data['excerpt'] ?? null;
             $book->fragment = $data['fragment'] ?? null;
             $book->is_featured = (bool) ($data['is_featured'] ?? false);
+            $book->is_adult = (bool) ($data['is_adult'] ?? false);
             $book->sort_order = (int) ($data['sort_order'] ?? 0);
 
             if ($cover !== null) {

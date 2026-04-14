@@ -359,4 +359,83 @@ class AdminBookControllerTest extends TestCase
 
         $this->actingAs($admin)->get("/admin/books/{$book->slug}/edit")->assertStatus(200);
     }
+
+    // -------------------------------------------------------------------------
+    // is_adult field — Phase 12.6
+    // -------------------------------------------------------------------------
+
+    public function test_admin_can_create_adult_book(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)->post('/admin/books', [
+            'title' => 'Книга 18+',
+            'slug' => 'adult-book',
+            'price' => '499',
+            'is_adult' => true,
+            'sort_order' => 0,
+        ]);
+
+        $this->assertDatabaseHas('books', [
+            'slug' => 'adult-book',
+            'is_adult' => true,
+        ]);
+    }
+
+    public function test_is_adult_defaults_to_false_when_omitted(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)->post('/admin/books', [
+            'title' => 'Обычная книга',
+            'slug' => 'normal-book',
+            'price' => '299',
+            'sort_order' => 0,
+        ]);
+
+        $this->assertDatabaseHas('books', [
+            'slug' => 'normal-book',
+            'is_adult' => false,
+        ]);
+    }
+
+    public function test_admin_can_update_book_to_adult(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $book = Book::factory()->withEpub()->create(['is_adult' => false, 'status' => BookStatus::Draft]);
+
+        $this->actingAs($admin)->put("/admin/books/{$book->slug}", [
+            'title' => $book->title,
+            'slug' => $book->slug,
+            'price' => '599',
+            'status' => 'draft',
+            'is_adult' => true,
+            'sort_order' => 0,
+        ]);
+
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
+            'is_adult' => true,
+        ]);
+    }
+
+    public function test_admin_can_update_book_to_remove_adult_flag(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $book = Book::factory()->adult()->withEpub()->create(['status' => BookStatus::Draft]);
+
+        $this->actingAs($admin)->put("/admin/books/{$book->slug}", [
+            'title' => $book->title,
+            'slug' => $book->slug,
+            'price' => '599',
+            'status' => 'draft',
+            'is_adult' => false,
+            'sort_order' => 0,
+        ]);
+
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
+            'is_adult' => false,
+        ]);
+    }
 }

@@ -2,7 +2,7 @@
 
 <x-seo
     title="Блог"
-    description="Статьи, новости и обзоры от Книжной лавки."
+    description="Статьи, новости и обзоры от Жасмин Майер."
 />
 
 @section('content')
@@ -26,9 +26,10 @@
 
                     {{-- Cover image --}}
                     <a href="{{ route('blog.show', $post) }}" class="block overflow-hidden bg-surface-muted aspect-[16/9]">
-                        @if($post->cover_thumb_url)
+                        @php $coverUrl = $post->cover_thumb_url ?? $post->cover_url; @endphp
+                        @if($coverUrl)
                             <img
-                                src="{{ $post->cover_thumb_url }}"
+                                src="{{ $coverUrl }}"
                                 alt="{{ $post->title }}"
                                 class="w-full h-full object-cover"
                                 loading="lazy"

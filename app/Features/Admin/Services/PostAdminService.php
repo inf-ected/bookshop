@@ -27,9 +27,14 @@ class PostAdminService
         $post->body = $this->sanitizer->sanitize($data['body']);
         $post->status = PostStatus::from($data['status']);
         $post->published_at = $data['published_at'] ?? null;
+        if ($post->status === PostStatus::Published && $post->published_at === null) {
+            $post->published_at = now();
+        }
 
         if ($cover !== null) {
-            $post->cover_path = $this->uploadCover($cover);
+            $path = $this->uploadCover($cover);
+            $post->cover_path = $path;
+            $post->cover_thumb_path = $path;
         }
 
         $post->save();
@@ -50,10 +55,15 @@ class PostAdminService
         $post->body = $this->sanitizer->sanitize($data['body']);
         $post->status = PostStatus::from($data['status']);
         $post->published_at = $data['published_at'] ?? null;
+        if ($post->status === PostStatus::Published && $post->published_at === null) {
+            $post->published_at = now();
+        }
 
         if ($cover !== null) {
             $this->deleteCoverIfExists($post);
-            $post->cover_path = $this->uploadCover($cover);
+            $path = $this->uploadCover($cover);
+            $post->cover_path = $path;
+            $post->cover_thumb_path = $path;
         }
 
         $post->save();

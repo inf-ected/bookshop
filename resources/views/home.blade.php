@@ -85,6 +85,49 @@
     </div>
 </section>
 
+{{-- Blog preview --}}
+@if($posts->isNotEmpty())
+<section class="py-12 px-4 bg-surface border-t border-border-subtle">
+    <div class="max-w-5xl mx-auto">
+
+        <div class="flex items-center justify-between mb-8">
+            <h2 class="font-serif text-2xl text-text-primary">Блог</h2>
+            <a href="{{ route('blog.index') }}" class="text-sm font-sans text-brand-700 hover:text-brand-800 transition-colors">
+                Все записи &rarr;
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            @foreach($posts as $post)
+            <a href="{{ route('blog.show', $post) }}" class="group flex flex-col rounded-xl overflow-hidden border border-border-subtle bg-surface hover:shadow-md transition-shadow">
+                @if($post->cover_url)
+                    <div class="aspect-[16/9] overflow-hidden bg-surface-muted">
+                        <img src="{{ $post->cover_url }}" alt="{{ $post->title }}"
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                    </div>
+                @else
+                    <div class="aspect-[16/9] bg-brand-100 flex items-center justify-center">
+                        <svg class="w-8 h-8 text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/>
+                        </svg>
+                    </div>
+                @endif
+                <div class="p-4 flex flex-col flex-1 gap-2">
+                    <p class="text-xs text-text-subtle font-sans">{{ $post->published_at?->translatedFormat('d F Y') }}</p>
+                    <h3 class="font-serif text-base text-text-primary leading-snug group-hover:text-brand-700 transition-colors">{{ $post->title }}</h3>
+                    @if($post->excerpt)
+                        <p class="text-sm text-text-muted leading-relaxed line-clamp-2 flex-1">{{ $post->excerpt }}</p>
+                    @endif
+                    <span class="mt-1 text-xs font-sans text-brand-700 font-medium">Читать &rarr;</span>
+                </div>
+            </a>
+            @endforeach
+        </div>
+
+    </div>
+</section>
+@endif
+
 {{-- Static promo strip --}}
 <section class="bg-surface-muted border-t border-border-subtle py-10 px-4">
     <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 text-center">

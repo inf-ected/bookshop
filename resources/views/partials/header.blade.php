@@ -9,6 +9,7 @@
         {{-- Desktop nav --}}
         <nav class="hidden md:flex items-center gap-6 text-sm font-sans">
             <a href="{{ route('books.index') }}" class="hover:text-brand-200 transition">Книги</a>
+            <a href="{{ route('blog.index') }}" class="hover:text-brand-200 transition">Блог</a>
 
             {{-- Cart icon with badge — hidden for admins --}}
             @unless(auth()->user()?->isAdmin())
@@ -75,6 +76,9 @@
                 <nav class="flex flex-col px-4 py-3 gap-1 text-sm font-sans">
                     <a href="{{ route('books.index') }}" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition">
                         Книги
+                    </a>
+                    <a href="{{ route('blog.index') }}" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition">
+                        Блог
                     </a>
                     @unless(auth()->user()?->isAdmin())
                     <a href="{{ route('cart.index') }}" class="py-2.5 border-b border-brand-800 hover:text-brand-200 transition flex items-center justify-between">

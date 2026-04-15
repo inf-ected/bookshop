@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Catalog\Controllers;
 
+use App\Features\Blog\Services\PostService;
 use App\Features\Catalog\Services\CatalogService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -11,7 +12,10 @@ use Illuminate\View\View;
 
 class HomeController extends Controller
 {
-    public function __construct(private readonly CatalogService $catalogService) {}
+    public function __construct(
+        private readonly CatalogService $catalogService,
+        private readonly PostService $postService,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -21,6 +25,8 @@ class HomeController extends Controller
             ? $this->catalogService->getOwnedBookIds($user)
             : collect();
 
-        return view('home', compact('books', 'ownedBookIds'));
+        $posts = $this->postService->listPublished(3);
+
+        return view('home', compact('books', 'ownedBookIds', 'posts'));
     }
 }

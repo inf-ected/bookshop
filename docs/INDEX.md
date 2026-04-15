@@ -4,22 +4,25 @@
 
 ---
 
-## Быстрая навигация по фазам
+## Статус фаз — все завершены ✅
 
-| Фаза | Что делает | Blueprint-раздел | Roadmap-раздел |
-|------|-----------|-----------------|----------------|
-| 1 | Foundation & CI | [Phase 1 — No schema](architecture-blueprint.md#phase-1--project-foundation--ci) | [Phase 1](development-roadmap.md#phase-1--project-foundation--ci) |
-| 2 | Storefront & Static Pages | [Phase 2 — books table](architecture-blueprint.md#phase-2--storefront--static-pages) | [Phase 2](development-roadmap.md#phase-2--storefront--static-pages) |
-| 3 | Auth & OAuth | [Phase 3 — users, oauth_providers](architecture-blueprint.md#phase-3--user-authentication--oauth) | [Phase 3](development-roadmap.md#phase-3--user-authentication--oauth) |
-| 4 | Admin Books | [Phase 4 — no new tables](architecture-blueprint.md#phase-4--admin-panel--books) | [Phase 4](development-roadmap.md#phase-4--admin-panel--books) |
-| 5 | Cart & Stripe | [Phase 5 — cart_items, orders, order_items, user_books](architecture-blueprint.md#phase-5--cart--payments-stripe) | [Phase 5](development-roadmap.md#phase-5--cart--payments-stripe) |
-| 6 | epub Delivery | [Phase 6 — download_logs](architecture-blueprint.md#phase-6--digital-delivery-epub) | [Phase 6](development-roadmap.md#phase-6--digital-delivery-epub) |
-| 7 | User Cabinet | [Phase 7 — no new tables](architecture-blueprint.md#phase-7--user-dashboard--library) | [Phase 7](development-roadmap.md#phase-7--user-dashboard--library) |
-| 8 | Blog | [Phase 8 — posts](architecture-blueprint.md#phase-8--blog) | [Phase 8](development-roadmap.md#phase-8--blog) |
-| 9 | SEO | [Phase 9 — no new tables](architecture-blueprint.md#phase-9--seo-layer) | [Phase 9](development-roadmap.md#phase-9--seo-layer) |
-| 10 | Analytics | [Phase 10 — analytics_events](architecture-blueprint.md#phase-10--analytics--event-tracking) | [Phase 10](development-roadmap.md#phase-10--analytics--event-tracking) |
-| 11 | Admin Blog & Static Pages | [Phase 11 — static_pages, newsletter_subscribers](architecture-blueprint.md#phase-11--admin-panel--blog--static-pages) | [Phase 11](development-roadmap.md#phase-11--admin-panel--blog--storefront) |
-| 12 | Hardening | [Phase 12 — indexes only](architecture-blueprint.md#phase-12--hardening--monitoring) | [Phase 12](development-roadmap.md#phase-12--hardening--monitoring) |
+| Фаза | Что делает | Статус |
+|------|-----------|--------|
+| 1 | Foundation & CI | ✅ merged PR #1 |
+| 2 | Storefront & Static Pages | ✅ merged |
+| 3 | Auth & OAuth | ✅ merged PRs #4–9 |
+| 4 | Admin Books | ✅ merged |
+| 5 | Cart & Stripe | ✅ merged PRs #12–15 |
+| 6 | epub Delivery | ✅ merged PR #16 |
+| 7 | User Cabinet | ✅ merged PRs #18–20 |
+| 8 | Blog | ✅ merged PRs #22–24 |
+| 9 | SEO | ✅ merged PRs #26–28 |
+| 10 | Analytics (GA4) | ✅ merged PR #30 |
+| 11 | Admin Panel — Blog & Storefront | ✅ merged PR #31 |
+| 12 | Hardening & Monitoring | ✅ merged PRs #34–39 |
+| **13** | **Deployment** | **→ [deployment-plan.md](deployment-plan.md)** |
+
+> Blueprint (phases 1–12) завершён. Агент-воркфлоу (architect → backend → frontend → reviewer) больше не нужен для плановых фаз. Новые задачи — через backlog.md.
 
 ---
 
@@ -66,9 +69,13 @@ Phase 12: indexes on orders, download_logs, analytics_events
 
 ---
 
+## Деплой
+
+→ [`deployment-plan.md`](deployment-plan.md) — пошаговый план: домен, Cloudflare, Hetzner VPS, S3, Resend, Stripe, GA4, CI/CD, smoke test
+
 ## Бэклог и дальнейшие планы
 
-→ [`backlog.md`](backlog.md) — все задачи после Phase 12: мелкие правки перед деплоем, технический долг, новые функции
+→ [`backlog.md`](backlog.md) — задачи после деплоя: технический долг, новые функции, улучшения
 
 ---
 

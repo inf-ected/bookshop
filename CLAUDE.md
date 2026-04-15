@@ -60,6 +60,22 @@ composer analyse   # Run PHPStan static analysis
 - **Stripe CLI** (`bookshop_stripe`, dev only): forwards Stripe webhook events to `http://nginx/webhooks/stripe`. Requires `STRIPE_SECRET` in `.env`. Defined in `docker-compose.dev.yml`.
 - **Static analysis**: `composer analyse` (PHPStan level 5 via `phpstan.neon`, includes Larastan + banned-code extension).
 
+## Production Deployment
+
+Production uses `docker-compose.yml` + `docker-compose.prod.yml` (no dev services, ports 80/443, real SSL certs mounted).
+
+```bash
+# On VPS (as deploy user)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec php php artisan migrate --force
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec php php artisan config:cache
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec php php artisan queue:restart
+```
+
+Full step-by-step plan (domain, Cloudflare, Hetzner VPS, Hetzner S3, Resend, Stripe, GA4, CI/CD): **`docs/deployment-plan.md`**
+
+**Project status**: All phases (1–12) complete. Blueprint is frozen. New work comes from `docs/backlog.md`.
+
 ## Testing
 
 Tests run with SQLite in-memory (`DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:`), so no Docker DB needed for tests.

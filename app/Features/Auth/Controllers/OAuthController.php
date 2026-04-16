@@ -28,6 +28,10 @@ class OAuthController extends Controller
             abort(404);
         }
 
+        if (! config('services.'.$provider.'.enabled', false)) {
+            abort(404);
+        }
+
         return Socialite::driver($provider)->redirect();
     }
 
@@ -37,6 +41,10 @@ class OAuthController extends Controller
     public function callback(string $provider): RedirectResponse
     {
         if (! OauthProvider::tryFrom($provider)) {
+            abort(404);
+        }
+
+        if (! config('services.'.$provider.'.enabled', false)) {
             abort(404);
         }
 

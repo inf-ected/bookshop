@@ -249,6 +249,10 @@
             <ul class="space-y-3">
                 @foreach($providers as $providerKey => $providerMeta)
                     @php $isLinked = in_array($providerKey, $linkedProviders); @endphp
+                    {{-- Hide providers disabled in config — existing DB links are harmless and auto-restore if re-enabled --}}
+                    @if(!config('services.' . $providerKey . '.enabled'))
+                        @continue
+                    @endif
 
                     <li class="flex items-center justify-between gap-4 py-3 border-b border-border-subtle last:border-0">
 

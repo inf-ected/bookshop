@@ -30,7 +30,30 @@ jobs:
     # Без этой проверки деплой запускался бы и при падении CI.
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
+    # ── Шаблонный guard ───────────────────────────────────────────────────────
+    # VPS_CONFIGURED = true только если секрет VPS_HOST добавлен в репозиторий.
+    # В шаблонном / форк-репо без настроенных секретов деплой пропускается
+    # с информационным сообщением вместо ошибки.
+    env:
+      VPS_CONFIGURED: ${{ secrets.VPS_HOST != '' }}
+
     steps:
+      # ── Информация если деплой не настроен ────────────────────────────────
+      # Этот шаг выполняется в шаблонном репо где секреты не заданы.
+      # В форке с реальными секретами шаг пропускается автоматически.
+      - name: Skip — deployment not configured
+        if: ${{ env.VPS_CONFIGURED != 'true' }}
+        run: |
+          echo "ℹ️  Deployment skipped — VPS secrets are not configured."
+          echo ""
+          echo "This is a template repository. To enable automatic deployment,"
+          echo "add the following secrets in Settings → Secrets → Actions:"
+          echo "  VPS_HOST    — IP or hostname of your VPS"
+          echo "  VPS_USER    — SSH user (e.g. deploy)"
+          echo "  VPS_SSH_KEY — private SSH key (contents of ~/.ssh/id_rsa)"
+          echo ""
+          echo "See docs/deployment-plan.md for full setup instructions."
+
       # ── SSH на VPS и деплой ─────────────────────────────────────────────────
       # appleboy/ssh-action подключается к VPS через SSH и выполняет скрипт.
       # Все переменные берутся из GitHub Secrets (Settings → Secrets → Actions).
@@ -40,6 +63,7 @@ jobs:
       #   VPS_USER    — пользователь SSH (deploy)
       #   VPS_SSH_KEY — приватный SSH-ключ (содержимое ~/.ssh/id_rsa)
       - name: Deploy via SSH
+        if: ${{ env.VPS_CONFIGURED == 'true' }}
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}

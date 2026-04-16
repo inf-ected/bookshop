@@ -27,6 +27,84 @@
 
 ---
 
+## Мультиформатные книги (EPUB, FB2 + конвертация из DOCX)
+
+Сейчас книги хранятся строго как EPUB. Расширить до поддержки FB2, принимать DOCX как источник.
+
+### Архитектура
+
+**`FormatConverter` контракт** — абстракция над конкретным инструментом:
+```php
+interface FormatConverter
+{
+    public function convert(string $inputPath, string $outputFormat): ConversionResult;
+    public function supports(string $inputFormat, string $outputFormat): bool;
+}
+```
+
+`ConversionResult` — value object: `outputPath`, `success`, `errorMessage`.
+
+**Реализации:**
+- `CalibreConverter` — shell `ebook-convert`, универсальный (EPUB→FB2, DOCX→любой)
+- `PandocConverter` — shell `pandoc`, лучшее качество для DOCX→EPUB
+
+**`ConverterRegistry`** — подбирает нужный конвертер по паре `(sourceFormat, targetFormat)`. Джоб работает только с интерфейсом.
+
+**Приоритет конверсий:**
+- DOCX→EPUB: Pandoc (качество прозы лучше)
+- DOCX→FB2: Calibre
+- EPUB→FB2: Calibre
+
+Форматы: **EPUB + FB2** (MOBI не нужен — deprecated Amazon).
+
+### DB — таблица `book_files`
+
+```
+id
+book_id          FK → books
+format           enum: docx, epub, fb2
+role             enum: source, derived
+path             string (S3 path, nullable)
+status           enum: pending, processing, ready, failed
+error_message    text nullable
+converted_at     timestamp nullable
+timestamps
+```
+
+`role=source` — загруженный файл (docx или epub). `role=derived` — сгенерированные форматы.
+
+Поле `epub_path` на таблице `books` остаётся как есть для обратной совместимости — при реализации решить: мигрировать в `book_files` или оставить дублирование.
+
+### Флоу
+
+1. Админ загружает DOCX или EPUB → файл в S3, запись `book_files` (role=source, status=ready)
+2. `BookObserver` → dispatches `ConvertBookFormats` job (одна запись `pending` на каждый производный формат)
+3. Job: `ConverterRegistry::for($sourceFormat, $targetFormat)` → конвертирует → обновляет статус
+4. На ошибке: `status=failed`, `error_message` = stderr конвертера
+
+### Admin UI
+
+На странице редактирования книги — блок «Файлы»:
+
+```
+Источник:  book.docx   [ready]
+EPUB:      —           [processing...]
+FB2:       —           [failed: "ebook-convert exit 1: ..."] [Повторить]
+```
+
+Кнопка «Повторить» — re-dispatch job для конкретного формата.
+
+### Скачивание (пользователь)
+
+`/books/{book}/download?format=epub` — только `ready` форматы показываются в dropdown.
+
+### Docker
+
+- Pandoc добавить в `docker/php/Dockerfile` (~100MB)
+- Calibre добавить в `docker/php/Dockerfile` (~500MB, CLI-only без GUI)
+
+---
+
 ## Технический долг
 
 ### Checkout order reuse

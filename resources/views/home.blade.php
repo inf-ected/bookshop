@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 <x-seo
-    title="Книжная лавка"
-    description="Качественная литература в цифровом формате — читайте где угодно, когда угодно. Мгновенный доступ после оплаты."
+    title="{{ __('home.title') }}"
+    description="{{ __('home.description') }}"
     og-type="website"
 />
 
@@ -12,13 +12,13 @@
 <section class="bg-brand-950 text-white py-14 px-4">
     <div class="max-w-5xl mx-auto text-center">
         <h1 class="font-serif text-3xl md:text-5xl leading-tight mb-4">
-            Книги, которые стоит прочитать
+            {{ __('home.title') }}
         </h1>
         <p class="font-sans text-brand-200 text-base md:text-lg mb-8 max-w-xl mx-auto">
-            Качественная литература в цифровом формате — читайте где угодно, когда угодно.
+            {{ __('home.description') }}
         </p>
         <a href="{{ route('books.index') }}" class="inline-block px-8 py-3 bg-accent text-white font-sans text-sm rounded hover:bg-accent-dark transition">
-            Перейти в каталог
+            {{ __('home.To the Catalog') }}
         </a>
     </div>
 </section>
@@ -28,16 +28,16 @@
     <div class="max-w-5xl mx-auto">
 
         <div class="flex items-center justify-between mb-6">
-            <h2 class="font-serif text-2xl text-text-primary">Книги</h2>
+            <h2 class="font-serif text-2xl text-text-primary">{{ __('home.Books') }}</h2>
             <a href="{{ route('books.index') }}" class="text-sm font-sans text-brand-700 hover:text-brand-900 transition">
-                Все книги &rarr;
+               {{ __('home.All Books') }} 
             </a>
         </div>
 
         @if($books->isEmpty())
             <div class="py-16 text-center">
-                <p class="font-serif text-xl text-text-muted">Скоро здесь появятся книги</p>
-                <p class="text-sm text-text-subtle mt-2">Следите за обновлениями</p>
+                <p class="font-serif text-xl text-text-muted">{{ __('home.Books will appear here soon') }}</p>
+                <p class="text-sm text-text-subtle mt-2">{{ ('stay tuned') }}</p>
             </div>
         @else
             {{-- Carousel wrapper --}}
@@ -73,7 +73,7 @@
                                 type="button"
                                 class="w-2 h-2 rounded-full transition"
                                 :class="active === {{ $i }} ? 'bg-brand-700' : 'bg-border-subtle'"
-                                aria-label="Слайд {{ $i + 1 }}"
+                                aria-label="{{ __('home.Slide') }} {{ $i + 1 }}"
                             ></button>
                         @endforeach
                     </div>
@@ -93,7 +93,7 @@
         <div class="flex items-center justify-between mb-8">
             <h2 class="font-serif text-2xl text-text-primary">Блог</h2>
             <a href="{{ route('blog.index') }}" class="text-sm font-sans text-brand-700 hover:text-brand-800 transition-colors">
-                Все записи &rarr;
+               {{ __('home.All Posts') }} 
             </a>
         </div>
 
@@ -134,20 +134,20 @@
 
         <div class="space-y-2">
             <div class="text-2xl font-serif text-brand-700">📖</div>
-            <h3 class="font-serif text-base">Мгновенный доступ</h3>
-            <p class="text-sm text-text-muted">После оплаты книга сразу доступна в вашем личном кабинете.</p>
+            <h3 class="font-serif text-base">{{ __('home.Instant Access') }}</h3>
+            <p class="text-sm text-text-muted">{{ __('home.Instant Access Message') }}</p>
         </div>
 
         <div class="space-y-2">
             <div class="text-2xl font-serif text-brand-700">🔒</div>
-            <h3 class="font-serif text-base">Безопасная оплата</h3>
-            <p class="text-sm text-text-muted">Платёжи обрабатываются через защищённые каналы.</p>
+            <h3 class="font-serif text-base">{{ __('home.Secure Payment') }}</h3>
+            <p class="text-sm text-text-muted">{{ __('home.Secure Payment Message') }}</p>
         </div>
 
         <div class="space-y-2">
             <div class="text-2xl font-serif text-brand-700">♾️</div>
-            <h3 class="font-serif text-base">Навсегда ваша</h3>
-            <p class="text-sm text-text-muted">Купленные книги остаются в вашей библиотеке бессрочно.</p>
+            <h3 class="font-serif text-base">{{ __('home.Forever Yours') }}</h3>
+            <p class="text-sm text-text-muted">{{ __('home.Forever Yours Message') }}</p>
         </div>
 
     </div>

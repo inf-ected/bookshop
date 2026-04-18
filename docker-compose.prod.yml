@@ -29,6 +29,18 @@ services:
       - ./docker/php/www.prod.conf:/usr/local/etc/php-fpm.d/www.conf:ro
     restart: unless-stopped
 
+  # ── Dev-only services — disabled in production via profiles ─────────────────
+  # Assigning profile "dev" means these services only start when explicitly
+  # requested with --profile dev. They are never started by docker compose up.
+  mailpit:
+    profiles: [dev]
+
+  minio:
+    profiles: [dev]
+
+  minio-setup:
+    profiles: [dev]
+
   # ── Horizon (queue worker) ───────────────────────────────────────────────────
   # Runs Laravel Horizon — processes all queued jobs (order emails, backups, etc.)
   # Shares the same image as the php service (built from the same Dockerfile).

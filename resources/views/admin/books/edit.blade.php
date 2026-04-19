@@ -146,7 +146,7 @@
                             @error('price') border-error-dot bg-error-light @else border-border-subtle @enderror"
                     >
                     <p class="mt-1 text-xs text-text-subtle">
-                        Текущая цена: {{ number_format($book->price / 100, 0, '.', ' ') }} {{ config('shop.currency_symbol') }}
+                        Текущая цена: {{ number_format($book->price / 100, config('shop.currency_decimals'), config('shop.currency_decimal_sep'), ' ') }} {{ config('shop.currency_symbol') }}
                     </p>
                     @error('price')
                         <p class="mt-1.5 text-xs text-error">{{ $message }}</p>

@@ -75,7 +75,7 @@
                                         {{ $item->book->title }}
                                     </span>
                                     <span class="shrink-0 text-sm font-sans text-text-muted">
-                                        {{ number_format($item->price / 100, 0, ',', ' ') }}&nbsp;{{ config('shop.currency_symbol') }}
+                                        {{ number_format($item->price / 100, config('shop.currency_decimals'), config('shop.currency_decimal_sep'), ' ') }}&nbsp;{{ config('shop.currency_symbol') }}
                                     </span>
                                 </li>
                             @endforeach

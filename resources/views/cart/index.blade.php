@@ -62,7 +62,7 @@
                                 {{ $item->book->title }}
                             </a>
                             <p class="mt-auto font-sans font-semibold text-sm text-brand-700">
-                                {{ number_format($item->book->price / 100, 0, ',', ' ') }}&nbsp;{{ config('shop.currency_symbol') }}
+                                {{ number_format($item->book->price / 100, config('shop.currency_decimals'), config('shop.currency_decimal_sep'), ' ') }}&nbsp;{{ config('shop.currency_symbol') }}
                             </p>
                         </div>
 
@@ -98,7 +98,7 @@
                         @foreach($items as $item)
                             <div class="flex justify-between gap-2 text-sm text-text-muted">
                                 <span class="truncate">{{ $item->book->title }}</span>
-                                <span class="shrink-0">{{ number_format($item->book->price / 100, 0, ',', ' ') }}&nbsp;{{ config('shop.currency_symbol') }}</span>
+                                <span class="shrink-0">{{ number_format($item->book->price / 100, config('shop.currency_decimals'), config('shop.currency_decimal_sep'), ' ') }}&nbsp;{{ config('shop.currency_symbol') }}</span>
                             </div>
                         @endforeach
                     </div>

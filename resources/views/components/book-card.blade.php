@@ -41,7 +41,7 @@
 
         <div class="mt-auto pt-3 flex items-center justify-between gap-2">
             <span class="font-sans font-semibold text-sm text-brand-700">
-                {{ number_format($book->price / 100, 0, ',', ' ') }}&nbsp;{{ config('shop.currency_symbol') }}
+                {{ number_format($book->price / 100, config('shop.currency_decimals'), config('shop.currency_decimal_sep'), ' ') }}&nbsp;{{ config('shop.currency_symbol') }}
             </span>
 
             @unless(auth()->user()?->isAdmin())

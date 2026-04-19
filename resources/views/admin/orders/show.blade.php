@@ -143,7 +143,7 @@
                             </div>
                         </div>
                         <p class="text-sm font-medium text-text-primary shrink-0">
-                            {{ number_format($item->price / 100, 0, '.', ' ') }} {{ config('shop.currency_symbol') }}
+                            {{ number_format($item->price / 100, config('shop.currency_decimals'), config('shop.currency_decimal_sep'), ' ') }} {{ config('shop.currency_symbol') }}
                         </p>
                     </div>
                 @endforeach

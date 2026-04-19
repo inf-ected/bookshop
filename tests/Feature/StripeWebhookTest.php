@@ -84,7 +84,7 @@ class StripeWebhookTest extends TestCase
 
     public function test_webhook_rejects_missing_signature(): void
     {
-        $response = $this->postJson(route('webhooks.stripe'), []);
+        $response = $this->postJson(route('webhooks.handle', ['provider' => 'stripe']), []);
 
         $response->assertStatus(400);
     }
@@ -92,7 +92,7 @@ class StripeWebhookTest extends TestCase
     public function test_webhook_rejects_invalid_signature(): void
     {
         $response = $this->post(
-            route('webhooks.stripe'),
+            route('webhooks.handle', ['provider' => 'stripe']),
             [],
             [
                 'Stripe-Signature' => 't=1234567890,v1=invalidsignature',
@@ -132,7 +132,7 @@ class StripeWebhookTest extends TestCase
 
         $response = $this->call(
             'POST',
-            route('webhooks.stripe'),
+            route('webhooks.handle', ['provider' => 'stripe']),
             [],
             [],
             [],
@@ -172,7 +172,7 @@ class StripeWebhookTest extends TestCase
 
         $response = $this->call(
             'POST',
-            route('webhooks.stripe'),
+            route('webhooks.handle', ['provider' => 'stripe']),
             [],
             [],
             [],
@@ -208,7 +208,7 @@ class StripeWebhookTest extends TestCase
 
         $response = $this->call(
             'POST',
-            route('webhooks.stripe'),
+            route('webhooks.handle', ['provider' => 'stripe']),
             [],
             [],
             [],
@@ -227,7 +227,7 @@ class StripeWebhookTest extends TestCase
 
         $response = $this->call(
             'POST',
-            route('webhooks.stripe'),
+            route('webhooks.handle', ['provider' => 'stripe']),
             [],
             [],
             [],
@@ -372,7 +372,7 @@ class StripeWebhookTest extends TestCase
 
         $response = $this->call(
             'POST',
-            route('webhooks.stripe'),
+            route('webhooks.handle', ['provider' => 'stripe']),
             [],
             [],
             [],
@@ -405,7 +405,7 @@ class StripeWebhookTest extends TestCase
 
         $response = $this->call(
             'POST',
-            route('webhooks.stripe'),
+            route('webhooks.handle', ['provider' => 'stripe']),
             [],
             [],
             [],
@@ -439,7 +439,7 @@ class StripeWebhookTest extends TestCase
 
         $this->call(
             'POST',
-            route('webhooks.stripe'),
+            route('webhooks.handle', ['provider' => 'stripe']),
             [],
             [],
             [],

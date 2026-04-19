@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Checkout\Services;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentGateway;
 use App\Features\Checkout\Contracts\PaymentProvider;
 use App\Features\Checkout\Contracts\SupportsWebhooks;
 use App\Features\Checkout\Exceptions\PaymentException;
@@ -42,9 +43,9 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
         Stripe::setApiKey($secret);
     }
 
-    public function getName(): string
+    public function getName(): PaymentGateway
     {
-        return 'stripe';
+        return PaymentGateway::Stripe;
     }
 
     public function extractReturnSessionId(Request $request): ?string
@@ -90,7 +91,7 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
             $session = Session::create([
                 'mode' => 'payment',
                 'line_items' => $lineItems,
-                'success_url' => route('checkout.success').'?session_id={CHECKOUT_SESSION_ID}',
+                'success_url' => route('checkout.success').'?provider='.PaymentGateway::Stripe->value.'&session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => route('cart.index'),
                 'client_reference_id' => (string) $order->id,
                 'customer_email' => $user->email,
@@ -107,7 +108,7 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
         // into the orders table (business entity stays provider-agnostic).
         OrderTransaction::query()->create([
             'order_id' => $order->id,
-            'provider' => 'stripe',
+            'provider' => PaymentGateway::Stripe->value,
             'provider_data' => [
                 'session_id' => $session->id,
                 'transaction_id' => $session->payment_intent,
@@ -175,7 +176,7 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
             : (string) ($session->payment_intent->id ?? '');
 
         // Look up order via order_transactions (provider-agnostic approach)
-        $order = $this->orderService->findByProviderSession('stripe', $stripeSessionId);
+        $order = $this->orderService->findByProviderSession(PaymentGateway::Stripe->value, $stripeSessionId);
 
         if ($order === null) {
             Log::warning('Stripe webhook: order not found for session', [
@@ -233,7 +234,7 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
     {
         $stripeSessionId = $session->id;
 
-        $transaction = $this->orderService->findTransactionByProviderData('stripe', 'session_id', $stripeSessionId);
+        $transaction = $this->orderService->findTransactionByProviderData(PaymentGateway::Stripe->value, 'session_id', $stripeSessionId);
 
         if ($transaction === null) {
             Log::warning('Stripe webhook: transaction not found for expired session', [

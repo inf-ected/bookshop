@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Checkout\Contracts;
 
+use App\Enums\PaymentGateway;
 use App\Features\Checkout\Exceptions\PaymentException;
 use App\Models\Order;
 use App\Models\User;
@@ -12,9 +13,9 @@ use Illuminate\Http\Request;
 interface PaymentProvider
 {
     /**
-     * Provider slug used for storage and routing (e.g. 'stripe', 'paypal').
+     * Provider identifier used for DB storage and routing.
      */
-    public function getName(): string;
+    public function getName(): PaymentGateway;
 
     /**
      * Create a payment session for the given order and user.

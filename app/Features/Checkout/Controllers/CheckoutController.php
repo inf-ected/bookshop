@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Checkout\Controllers;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentGateway;
 use App\Features\Cart\Exceptions\EmptyCartException;
 use App\Features\Checkout\Exceptions\PaymentException;
 use App\Features\Checkout\Services\OrderService;
@@ -38,7 +39,7 @@ class CheckoutController extends Controller
             'provider' => ['required', 'string', 'in:'.implode(',', $this->registry->availableSlugs())],
         ]);
 
-        $paymentProvider = $this->registry->get($request->input('provider'));
+        $paymentProvider = $this->registry->get(PaymentGateway::from($request->input('provider')));
         $user = $request->user();
 
         try {
@@ -51,7 +52,7 @@ class CheckoutController extends Controller
             $session = $paymentProvider->createSession($order, $user);
         } catch (PaymentException $e) {
             Log::error('Payment provider error during session creation', [
-                'provider' => $paymentProvider->getName(),
+                'provider' => $paymentProvider->getName()->value,
                 'order_id' => $order->id,
                 'error' => $e->getMessage(),
             ]);
@@ -79,38 +80,43 @@ class CheckoutController extends Controller
      */
     public function success(Request $request): View|RedirectResponse
     {
-        foreach ($this->registry->available() as $slug => $provider) {
-            $sessionId = $provider->extractReturnSessionId($request);
+        $gateway = PaymentGateway::tryFrom((string) $request->query('provider', ''));
 
-            if ($sessionId === null) {
-                continue;
-            }
-
-            $order = $this->orderService->findByProviderSession($slug, $sessionId, $request->user()->id);
-
-            if ($order === null) {
-                continue;
-            }
-
-            try {
-                $provider->handleReturn($request, $order);
-            } catch (PaymentException $e) {
-                Log::error('Payment provider error on return redirect', [
-                    'provider' => $slug,
-                    'order_id' => $order->id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-
-            if ($order->status === OrderStatus::Paid) {
-                return redirect()->route('cabinet.library')
-                    ->with('success', 'Оплата прошла успешно! Книги добавлены в вашу библиотеку.');
-            }
-
-            return view('checkout.success', ['order' => $order]);
+        if ($gateway === null || ! $this->registry->isEnabled($gateway)) {
+            return view('checkout.success', ['order' => null]);
         }
 
-        return view('checkout.success', ['order' => null]);
+        $provider = $this->registry->get($gateway);
+        $sessionId = $provider->extractReturnSessionId($request);
+
+        if ($sessionId === null) {
+            return view('checkout.success', ['order' => null]);
+        }
+
+        $order = $this->orderService->findByProviderSession($gateway->value, $sessionId, $request->user()->id);
+
+        if ($order === null) {
+            return view('checkout.success', ['order' => null]);
+        }
+
+        try {
+            $provider->handleReturn($request, $order);
+        } catch (PaymentException $e) {
+            Log::error('Payment provider error on return redirect', [
+                'provider' => $gateway->value,
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        $order->refresh();
+
+        if ($order->status === OrderStatus::Paid) {
+            return redirect()->route('cabinet.library')
+                ->with('success', 'Оплата прошла успешно! Книги добавлены в вашу библиотеку.');
+        }
+
+        return view('checkout.success', ['order' => $order]);
     }
 
     /**

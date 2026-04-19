@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentGateway;
 use App\Features\Checkout\Jobs\ProcessPaymentConfirmation;
 use App\Models\Book;
 use App\Models\CartItem;
@@ -146,7 +147,7 @@ class StripeWebhookTest extends TestCase
             return $job->orderId === $order->id
                 && $job->transactionId === 'pi_test_intent_123'
                 && $job->sessionId === 'cs_test_valid_session'
-                && $job->provider === 'stripe';
+                && $job->provider === PaymentGateway::Stripe;
         });
     }
 

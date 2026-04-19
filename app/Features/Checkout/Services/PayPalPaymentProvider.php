@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Checkout\Services;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentGateway;
 use App\Features\Checkout\Contracts\PaymentProvider;
 use App\Features\Checkout\Contracts\SupportsWebhooks;
 use App\Features\Checkout\Exceptions\PaymentException;
@@ -72,9 +73,9 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
             : 'https://api-m.sandbox.paypal.com';
     }
 
-    public function getName(): string
+    public function getName(): PaymentGateway
     {
-        return 'paypal';
+        return PaymentGateway::PayPal;
     }
 
     /**
@@ -182,7 +183,7 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
                 ],
             ],
             'application_context' => [
-                'return_url' => route('checkout.success'),
+                'return_url' => route('checkout.success').'?provider='.PaymentGateway::PayPal->value,
                 'cancel_url' => route('cart.index'),
                 'brand_name' => config('app.name'),
                 'user_action' => 'PAY_NOW',
@@ -226,7 +227,7 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
 
         OrderTransaction::query()->create([
             'order_id' => $order->id,
-            'provider' => 'paypal',
+            'provider' => PaymentGateway::PayPal->value,
             'provider_data' => [
                 'session_id' => $paypalOrderId,
                 'paypal_order_id' => $paypalOrderId,
@@ -303,7 +304,7 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
 
         $captureId = (string) ($resource['id'] ?? '');
 
-        $order = $this->orderService->findByProviderSession('paypal', $paypalOrderId);
+        $order = $this->orderService->findByProviderSession(PaymentGateway::PayPal->value, $paypalOrderId);
 
         if ($order === null) {
             Log::warning('PayPal webhook: order not found for PayPal order', [

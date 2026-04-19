@@ -25,8 +25,8 @@
 ### Человекочитаемое имя файла при скачивании книги
 Сейчас скачиваемый файл получает имя вида `a3f7c...uuid...epub` — пользователь вынужден переименовывать вручную перед переносом на Kindle или телефон. Установить `Content-Disposition: attachment; filename="{slug}.epub"` в контроллере скачивания. Слаг уже есть на модели `Book`, безопасен для файловых систем, не содержит спецсимволов. При реализации мультиформата — `{slug}.fb2` и т.д.
 
-### Конфиг enabled для платёжных систем
-Добавить флаг `config('payments.providers.stripe.enabled')` (и аналогичные для будущих провайдеров). При `enabled = false` — скрывать кнопку оплаты и возвращать понятную ошибку. Позволит оперативно отключить провайдер без деплоя. Затронет: `config/payments.php` (новый файл), `CheckoutController`, Blade-шаблоны оплаты.
+### ~~Конфиг enabled для платёжных систем~~ ✅ done
+Реализовано: `services.stripe.enabled` / `services.paypal.enabled` в `config/services.php`, управляется через `STRIPE_ENABLED` / `PAYPAL_ENABLED` в `.env`. PayPal по умолчанию `false`. `PaymentProviderRegistry` проверяет флаг через lazy closure — не инстанциирует провайдер при `enabled = false`.
 
 ---
 

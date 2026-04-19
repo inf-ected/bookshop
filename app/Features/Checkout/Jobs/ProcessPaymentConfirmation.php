@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Checkout\Jobs;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentGateway;
 use App\Features\Checkout\Events\OrderPaid;
 use App\Models\CartItem;
 use App\Models\Order;
@@ -29,7 +30,7 @@ class ProcessPaymentConfirmation implements ShouldQueue
         public readonly int $orderId,
         public readonly string $transactionId,
         public readonly string $sessionId,
-        public readonly string $provider = 'stripe',
+        public readonly PaymentGateway $provider = PaymentGateway::Stripe,
     ) {
         $this->onQueue('payments');
     }
@@ -67,7 +68,7 @@ class ProcessPaymentConfirmation implements ShouldQueue
             // so the provider-specific data stays in order_transactions, not on orders.
             $transaction = OrderTransaction::query()
                 ->where('order_id', $this->orderId)
-                ->where('provider', $this->provider)
+                ->where('provider', $this->provider->value)
                 ->whereRaw("json_extract(provider_data, '$.session_id') = ?", [$this->sessionId])
                 ->first();
 

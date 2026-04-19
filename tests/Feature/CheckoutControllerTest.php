@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentGateway;
 use App\Features\Checkout\Contracts\PaymentProvider;
 use App\Features\Checkout\Exceptions\PaymentException;
 use App\Features\Checkout\Services\PaymentProviderRegistry;
@@ -49,16 +50,16 @@ class CheckoutControllerTest extends TestCase
             /** @param array{id: string, url: string} $session */
             public function __construct(private readonly array $session) {}
 
-            public function getName(): string
+            public function getName(): PaymentGateway
             {
-                return 'stripe';
+                return PaymentGateway::Stripe;
             }
 
             public function createSession(Order $order, User $user): array
             {
                 OrderTransaction::query()->create([
                     'order_id' => $order->id,
-                    'provider' => 'stripe',
+                    'provider' => PaymentGateway::Stripe->value,
                     'provider_data' => ['session_id' => $this->session['id']],
                     'status' => 'pending',
                     'expires_at' => now()->addMinutes(30),
@@ -81,7 +82,7 @@ class CheckoutControllerTest extends TestCase
     private function bindFakeRegistry(PaymentProvider $provider): void
     {
         $this->app->instance(PaymentProviderRegistry::class, new PaymentProviderRegistry([
-            'stripe' => [
+            PaymentGateway::Stripe->value => [
                 'enabled' => fn (): bool => true,
                 'factory' => fn (): PaymentProvider => $provider,
             ],
@@ -210,9 +211,9 @@ class CheckoutControllerTest extends TestCase
         // Override with a fake that throws PaymentException on createSession
         $this->bindFakeRegistry(new class implements PaymentProvider
         {
-            public function getName(): string
+            public function getName(): PaymentGateway
             {
-                return 'stripe';
+                return PaymentGateway::Stripe;
             }
 
             public function createSession(Order $order, User $user): array
@@ -279,7 +280,7 @@ class CheckoutControllerTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)
-            ->get(route('checkout.success').'?session_id=cs_test_already_paid');
+            ->get(route('checkout.success').'?provider=stripe&session_id=cs_test_already_paid');
 
         $response->assertRedirect('/cabinet/library');
     }
@@ -294,7 +295,7 @@ class CheckoutControllerTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)
-            ->get(route('checkout.success').'?session_id=cs_test_pending');
+            ->get(route('checkout.success').'?provider=stripe&session_id=cs_test_pending');
 
         $response->assertOk();
         $response->assertViewIs('checkout.success');

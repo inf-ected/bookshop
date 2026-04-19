@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Checkout\Services;
 
+use App\Enums\PaymentGateway;
 use App\Features\Checkout\Contracts\PaymentProvider;
 use App\Features\Checkout\Contracts\SupportsWebhooks;
 use InvalidArgumentException;
@@ -11,7 +12,7 @@ use InvalidArgumentException;
 class PaymentProviderRegistry
 {
     /**
-     * Resolved provider instances, keyed by slug.
+     * Resolved provider instances, keyed by PaymentGateway slug.
      *
      * @var array<string, PaymentProvider>
      */
@@ -19,8 +20,9 @@ class PaymentProviderRegistry
 
     /**
      * @param  array<string, array{enabled: \Closure(): bool, factory: \Closure(): PaymentProvider}>  $definitions
-     *                                                                                                              Each entry declares an `enabled` closure (checked at runtime against config) and a lazy
-     *                                                                                                              `factory` closure (instantiated on first use to avoid boot-time credential failures).
+     *                                                                                                              Keyed by PaymentGateway->value. Each entry declares an `enabled` closure (checked at
+     *                                                                                                              runtime against config) and a lazy `factory` closure (instantiated on first use to
+     *                                                                                                              avoid boot-time credential failures for unconfigured providers).
      */
     public function __construct(private readonly array $definitions) {}
 
@@ -65,21 +67,24 @@ class PaymentProviderRegistry
     /**
      * Check whether a provider is registered AND currently enabled.
      *
-     * Cheaper than calling available() when you only need to gate on a single slug
-     * (e.g. in success() to validate the session-stored provider name).
+     * Does NOT instantiate the provider — only evaluates the enabled closure.
      */
-    public function isEnabled(string $slug): bool
+    public function isEnabled(PaymentGateway $gateway): bool
     {
+        $slug = $gateway->value;
+
         return isset($this->definitions[$slug]) && ($this->definitions[$slug]['enabled'])();
     }
 
     /**
-     * Resolve an enabled provider by its slug.
+     * Resolve an enabled provider by its gateway enum.
      *
      * @throws InvalidArgumentException if the provider is not registered or not enabled.
      */
-    public function get(string $slug): PaymentProvider
+    public function get(PaymentGateway $gateway): PaymentProvider
     {
+        $slug = $gateway->value;
+
         if (! isset($this->definitions[$slug])) {
             throw new InvalidArgumentException("Payment provider '{$slug}' is not registered.");
         }
@@ -92,7 +97,7 @@ class PaymentProviderRegistry
     }
 
     /**
-     * Resolve a webhook-capable provider by its slug.
+     * Resolve a webhook-capable provider by its gateway enum.
      *
      * Intentionally does NOT check the `enabled` flag — webhooks may arrive for a provider
      * that has since been disabled (e.g. in-flight payments). We process them to avoid losing

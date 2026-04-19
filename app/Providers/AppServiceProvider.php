@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Enums\PaymentGateway;
 use App\Features\Cart\Listeners\MergeGuestCartOnLogin;
 use App\Features\Checkout\Events\OrderPaid;
 use App\Features\Checkout\Listeners\SendOrderConfirmationEmail;
@@ -44,11 +45,11 @@ class AppServiceProvider extends ServiceProvider
         // credential failures for unconfigured providers).
         $this->app->singleton(PaymentProviderRegistry::class, function ($app): PaymentProviderRegistry {
             return new PaymentProviderRegistry([
-                'stripe' => [
+                PaymentGateway::Stripe->value => [
                     'enabled' => fn (): bool => (bool) config('services.stripe.enabled', true),
                     'factory' => fn (): StripePaymentProvider => $app->make(StripePaymentProvider::class),
                 ],
-                'paypal' => [
+                PaymentGateway::PayPal->value => [
                     'enabled' => fn (): bool => (bool) config('services.paypal.enabled', false),
                     'factory' => fn (): PayPalPaymentProvider => $app->make(PayPalPaymentProvider::class),
                 ],

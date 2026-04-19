@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\PaymentGateway;
 use App\Features\Checkout\Exceptions\PaymentException;
 use App\Features\Checkout\Jobs\ProcessPaymentConfirmation;
 use App\Features\Checkout\Services\PayPalPaymentProvider;
@@ -43,7 +44,7 @@ class PayPalPaymentProviderTest extends TestCase
 
     public function test_get_name_returns_paypal(): void
     {
-        $this->assertSame('paypal', $this->provider->getName());
+        $this->assertSame(PaymentGateway::PayPal, $this->provider->getName());
     }
 
     // -------------------------------------------------------------------------
@@ -250,7 +251,7 @@ class PayPalPaymentProviderTest extends TestCase
         Queue::assertPushed(ProcessPaymentConfirmation::class, function ($job) use ($order): bool {
             return $job->orderId === $order->id
                 && $job->sessionId === 'PAYPAL-ORDER-XYZ789'
-                && $job->provider === 'paypal';
+                && $job->provider === PaymentGateway::PayPal;
         });
     }
 

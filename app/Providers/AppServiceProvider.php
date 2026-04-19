@@ -6,10 +6,10 @@ namespace App\Providers;
 
 use App\Features\Cart\Listeners\MergeGuestCartOnLogin;
 use App\Features\Checkout\Contracts\PaymentProvider;
-use App\Features\Checkout\Contracts\SupportsWebhooks;
-use App\Features\Checkout\Controllers\WebhookController;
 use App\Features\Checkout\Events\OrderPaid;
 use App\Features\Checkout\Listeners\SendOrderConfirmationEmail;
+use App\Features\Checkout\Services\PaymentProviderRegistry;
+use App\Features\Checkout\Services\PayPalPaymentProvider;
 use App\Features\Checkout\Services\StripePaymentProvider;
 use App\Features\Newsletter\Listeners\AddContactToNewsletter;
 use App\Features\Pages\Observers\BookObserver;
@@ -38,16 +38,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Default payment provider for CheckoutController — Stripe.
+        // PayPal selection UI is future work; for now Stripe is the active provider.
         $this->app->singleton(
             PaymentProvider::class,
             StripePaymentProvider::class,
         );
 
-        // Bind SupportsWebhooks for WebhookController — currently Stripe only.
-        // When adding PayPal: add a separate contextual binding or introduce a provider registry.
-        $this->app->when(WebhookController::class)
-            ->needs(SupportsWebhooks::class)
-            ->give(StripePaymentProvider::class);
+        // Registry holds lazy factory closures keyed by provider slug so WebhookController
+        // can resolve the correct provider from the route {provider} parameter.
+        // Factories are called on first use — providers with missing credentials (e.g. PayPal
+        // in Stripe-only environments) are never instantiated unless their webhook route is hit.
+        $this->app->singleton(PaymentProviderRegistry::class, function ($app): PaymentProviderRegistry {
+            return new PaymentProviderRegistry([
+                'stripe' => fn () => $app->make(StripePaymentProvider::class),
+                'paypal' => fn () => $app->make(PayPalPaymentProvider::class),
+            ]);
+        });
     }
 
     /**

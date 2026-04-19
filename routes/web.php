@@ -87,8 +87,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/checkout/status/{order}', [CheckoutController::class, 'status'])->name('checkout.status');
 });
 
-// Stripe webhook — no CSRF, no auth middleware (Rule 35)
-Route::post('/webhooks/stripe', [WebhookController::class, 'handleStripe'])->name('webhooks.stripe');
+// Payment provider webhooks — no CSRF, no auth middleware (Rule 35).
+// The named 'webhooks.stripe' alias preserves backward compatibility with existing tests and Stripe CLI config.
+Route::post('/webhooks/{provider}', [WebhookController::class, 'handle'])->name('webhooks.handle');
+Route::post('/webhooks/stripe', [WebhookController::class, 'handle'])
+    ->name('webhooks.stripe')
+    ->defaults('provider', 'stripe');
 
 // Download (auth + verified + rate limited)
 Route::get('/books/{book:slug}/download', [DownloadController::class, 'show'])

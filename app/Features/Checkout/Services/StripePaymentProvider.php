@@ -132,8 +132,12 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
      * @throws PaymentException on signature verification failure or invalid payload
      * @throws Throwable
      */
-    public function handleWebhook(string $payload, string $signature): void
+    public function handleWebhook(string $payload, array $headers): void
     {
+        $signature = is_array($headers['stripe-signature'] ?? null)
+            ? implode(',', $headers['stripe-signature'])
+            : (string) ($headers['stripe-signature'] ?? '');
+
         try {
             $event = Webhook::constructEvent(
                 $payload,

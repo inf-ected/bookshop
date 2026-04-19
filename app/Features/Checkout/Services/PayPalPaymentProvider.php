@@ -12,19 +12,52 @@ use App\Features\Checkout\Jobs\ProcessPaymentConfirmation;
 use App\Models\Order;
 use App\Models\OrderTransaction;
 use App\Models\User;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
+use Throwable;
 
+/**
+ * PayPal REST API v2 payment provider.
+ *
+ * ## HTTP request flow (5 outbound calls per successful purchase)
+ *
+ * ### 1. Checkout initiated — createSession()
+ *   [1] POST /v1/oauth2/token            client_credentials grant → access token (cached 9h)
+ *   [2] POST /v2/checkout/orders         create order → { id, links[approve] }
+ *       → OrderTransaction stored { session_id: paypal_order_id, status: pending }
+ *       → redirect customer to PayPal approval URL
+ *
+ * ### 2. Customer approves on PayPal → redirect back to /checkout/success?token=ORDER_ID
+ *       handleReturn()
+ *   [3] POST /v2/checkout/orders/{id}/capture   lock funds server-side
+ *       → order stays pending (Rule 29: webhook is source of truth)
+ *       → customer sees polling page
+ *
+ * ### 3. PayPal sends PAYMENT.CAPTURE.COMPLETED webhook → /webhooks/paypal
+ *       handleWebhook() → verifyWebhookSignature()
+ *   [4] POST /v1/oauth2/token            (or from cache)
+ *   [5] POST /v1/notifications/verify-webhook-signature   asymmetric RSA signature check
+ *       → { verification_status: "SUCCESS" }
+ *       → dispatch ProcessPaymentConfirmation → order paid, books granted
+ *
+ * ### Why webhook verification requires an extra API call (vs Stripe's local HMAC)
+ *   PayPal uses asymmetric RSA+SHA256 signatures with a rotating certificate (paypal-cert-url
+ *   header). Local verification is possible but requires fetching the cert and doing RSA crypto.
+ *   PayPal's verification API accepts the raw headers + payload and returns SUCCESS/FAILURE —
+ *   simpler, no crypto code, one extra round-trip per webhook (acceptable given webhook rarity).
+ */
 readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhooks
 {
     private string $baseUrl;
 
     /**
      * @throws RuntimeException if required config values are missing.
+     * @throws Throwable
      */
     public function __construct(private OrderService $orderService)
     {
@@ -65,6 +98,7 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
      * and ProcessPaymentConfirmation runs (Rule 29).
      *
      * @throws PaymentException
+     * @throws ConnectionException
      */
     public function handleReturn(Request $request, Order $order): void
     {
@@ -107,6 +141,7 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
      * @return array{id: string, url: string}
      *
      * @throws PaymentException
+     * @throws ConnectionException
      */
     public function createSession(Order $order, User $user): array
     {
@@ -216,6 +251,7 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
      * @param  array<string, string|string[]>  $headers
      *
      * @throws PaymentException on signature verification failure or invalid payload
+     * @throws ConnectionException
      */
     public function handleWebhook(string $payload, array $headers): void
     {
@@ -306,6 +342,7 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
      * @param  array<string, string|string[]>  $headers
      *
      * @throws PaymentException on verification failure.
+     * @throws ConnectionException
      */
     private function verifyWebhookSignature(string $payload, array $headers): void
     {
@@ -362,6 +399,7 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
      * expiry (typically 32400 seconds / 9 hours) to avoid using an expired token.
      *
      * @throws PaymentException if the token request fails.
+     * @throws ConnectionException
      */
     private function getAccessToken(): string
     {

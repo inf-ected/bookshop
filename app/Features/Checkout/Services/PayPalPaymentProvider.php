@@ -20,7 +20,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
-use Throwable;
 
 /**
  * PayPal REST API v2 payment provider.
@@ -57,8 +56,7 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
     private string $baseUrl;
 
     /**
-     * @throws RuntimeException if required config values are missing.
-     * @throws Throwable
+     * @throws RuntimeException if PAYPAL_CLIENT_ID or PAYPAL_CLIENT_SECRET are not configured
      */
     public function __construct(private OrderService $orderService)
     {

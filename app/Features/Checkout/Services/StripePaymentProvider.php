@@ -30,7 +30,7 @@ use UnexpectedValueException;
 readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhooks
 {
     /**
-     * @throws Throwable
+     * @throws RuntimeException if STRIPE_SECRET or STRIPE_WEBHOOK_SECRET are not configured
      */
     public function __construct(private OrderService $orderService)
     {
@@ -133,7 +133,6 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
      * Rule 30: idempotency via order_transactions — skip if already paid.
      *
      * @throws PaymentException on signature verification failure or invalid payload
-     * @throws Throwable
      */
     public function handleWebhook(string $payload, array $headers): void
     {

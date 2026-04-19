@@ -97,8 +97,17 @@ readonly class OrderService
      * a trusted internal constant (e.g. 'session_id', 'payment_intent') — never
      * pass user-supplied input as $key.
      */
+    /**
+     * @throws \InvalidArgumentException if $key is not an allowed JSON field name
+     */
     public function findTransactionByProviderData(string $provider, string $key, string $value): ?OrderTransaction
     {
+        $allowed = ['session_id', 'transaction_id', 'payment_intent'];
+
+        if (! in_array($key, $allowed, strict: true)) {
+            throw new \InvalidArgumentException("JSON key '$key' is not allowed in provider_data lookups.");
+        }
+
         return OrderTransaction::query()
             ->with('order')
             ->where('provider', $provider)

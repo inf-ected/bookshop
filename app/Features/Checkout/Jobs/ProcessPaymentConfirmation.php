@@ -70,6 +70,7 @@ class ProcessPaymentConfirmation implements ShouldQueue
                 ->where('order_id', $this->orderId)
                 ->where('provider', $this->provider->value)
                 ->whereRaw("json_extract(provider_data, '$.session_id') = ?", [$this->sessionId])
+                ->lockForUpdate()
                 ->first();
 
             if ($transaction !== null) {

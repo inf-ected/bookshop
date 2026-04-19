@@ -112,6 +112,10 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
             return;
         }
 
+        if (! preg_match('/^[A-Z0-9\-]{1,50}$/', $token)) {
+            throw new PaymentException('Invalid PayPal token format.');
+        }
+
         $accessToken = $this->getAccessToken();
 
         $response = Http::withToken($accessToken)

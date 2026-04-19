@@ -110,6 +110,19 @@ class CheckoutControllerTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // Provider validation
+    // -------------------------------------------------------------------------
+
+    public function test_checkout_store_rejects_invalid_provider(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post(route('checkout.store'), ['provider' => 'unknown']);
+
+        $response->assertSessionHasErrors('provider');
+    }
+
+    // -------------------------------------------------------------------------
     // Empty cart
     // -------------------------------------------------------------------------
 

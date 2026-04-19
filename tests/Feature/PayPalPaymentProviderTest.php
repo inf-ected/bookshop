@@ -387,8 +387,10 @@ class PayPalPaymentProviderTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_webhook_route_returns_400_for_unknown_provider(): void
+    public function test_webhook_route_returns_200_for_unknown_provider(): void
     {
+        // Unknown providers get a silent 200 — no retry storm from the sender,
+        // no information leak about internal provider registry.
         $response = $this->call(
             'POST',
             route('webhooks.handle', ['provider' => 'unknown_provider']),
@@ -399,7 +401,7 @@ class PayPalPaymentProviderTest extends TestCase
             '{}',
         );
 
-        $response->assertStatus(400);
+        $response->assertStatus(200);
     }
 
     // -------------------------------------------------------------------------

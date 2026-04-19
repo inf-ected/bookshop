@@ -30,7 +30,7 @@ class WebhookController extends Controller
         } catch (InvalidArgumentException $e) {
             Log::warning('Webhook received for unknown provider', ['provider' => Str::limit($provider, 50)]);
 
-            return response('Unknown provider', 400);
+            return response('OK', 200);
         }
 
         try {

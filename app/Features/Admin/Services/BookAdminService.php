@@ -22,7 +22,7 @@ class BookAdminService
      * Create a new book record, upload cover files synchronously, and dispatch
      * the epub upload job if an epub file is provided.
      *
-     * @param  array<string, mixed>  $data  Validated form data (price in rubles)
+     * @param  array<string, mixed>  $data  Validated form data (price in shop currency)
      *
      * @throws Throwable
      */
@@ -38,7 +38,7 @@ class BookAdminService
             $book->slug = $data['slug'];
             $book->status = BookStatus::Draft;
             $book->price = (int) round((float) $data['price'] * 100);
-            $book->currency = 'RUB';
+            $book->currency = config('shop.currency_code');
             $book->annotation = $data['annotation'] ?? null;
             $book->excerpt = $data['excerpt'] ?? null;
             $book->fragment = $data['fragment'] ?? null;
@@ -79,7 +79,7 @@ class BookAdminService
      * Update an existing book record, upload cover files synchronously, and
      * dispatch the epub upload job if a new epub file is provided.
      *
-     * @param  array<string, mixed>  $data  Validated form data (price in rubles)
+     * @param  array<string, mixed>  $data  Validated form data (price in shop currency)
      *
      * @throws InvalidArgumentException
      * @throws Throwable if Rule 17 is violated (cannot unpublish a book with purchases)

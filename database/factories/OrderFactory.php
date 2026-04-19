@@ -23,7 +23,7 @@ class OrderFactory extends Factory
             'user_id' => User::factory(),
             'status' => OrderStatus::Pending,
             'total_amount' => fake()->numberBetween(29900, 199900),
-            'currency' => 'RUB',
+            'currency' => config('shop.currency_code'),
             'paid_at' => null,
         ];
     }

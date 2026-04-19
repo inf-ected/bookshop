@@ -137,7 +137,7 @@ class CheckoutControllerTest extends TestCase
             'order_id' => $order->id,
             'book_id' => $book->id,
             'price' => 59000,
-            'currency' => 'RUB',
+            'currency' => config('shop.currency_code'),
         ]);
 
         // Cart is NOT cleared here — it is cleared by ProcessPaymentConfirmation

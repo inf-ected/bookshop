@@ -65,7 +65,7 @@
                     Купить полную книгу
                 </a>
                 <p class="mt-2 text-xs text-text-subtle">
-                    {{ number_format($book->price / 100, 0, ',', ' ') }}&nbsp;₽
+                    {{ number_format($book->price / 100, config('shop.currency_decimals'), config('shop.currency_decimal_sep'), ' ') }}&nbsp;{{ config('shop.currency_symbol') }}
                 </p>
             </div>
         </template>

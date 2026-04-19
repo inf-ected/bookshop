@@ -75,7 +75,7 @@
                                         {{ $item->book->title }}
                                     </span>
                                     <span class="shrink-0 text-sm font-sans text-text-muted">
-                                        {{ number_format($item->price / 100, 0, ',', ' ') }}&nbsp;₽
+                                        {{ number_format($item->price / 100, config('shop.currency_decimals'), config('shop.currency_decimal_sep'), ' ') }}&nbsp;{{ config('shop.currency_symbol') }}
                                     </span>
                                 </li>
                             @endforeach
@@ -85,7 +85,7 @@
                         <div class="mt-4 pt-4 border-t border-border-subtle flex justify-between items-baseline">
                             <span class="text-xs font-sans text-text-muted">Итого</span>
                             <span class="font-serif text-lg font-semibold text-text-primary">
-                                {{ number_format($order->total_amount / 100, 0, ',', ' ') }}&nbsp;₽
+                                {{ number_format($order->total_amount / 100, 0, ',', ' ') }}&nbsp;{{ config('shop.currency_symbol') }}
                             </span>
                         </div>
                     </div>

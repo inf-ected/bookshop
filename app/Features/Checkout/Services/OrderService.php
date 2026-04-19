@@ -43,14 +43,14 @@ class OrderService
                 'user_id' => $user->id,
                 'status' => OrderStatus::Pending,
                 'total_amount' => $this->cartService->getTotalFromItems($items),
-                'currency' => 'RUB',
+                'currency' => config('shop.currency_code'),
             ]);
 
             foreach ($items as $item) {
                 $order->items()->create([
                     'book_id' => $item->book_id,
                     'price' => $item->book->price,
-                    'currency' => 'RUB',
+                    'currency' => config('shop.currency_code'),
                 ]);
             }
 

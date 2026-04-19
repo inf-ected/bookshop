@@ -62,7 +62,7 @@
                                 {{ $item->book->title }}
                             </a>
                             <p class="mt-auto font-sans font-semibold text-sm text-brand-700">
-                                {{ number_format($item->book->price / 100, 0, ',', ' ') }}&nbsp;₽
+                                {{ number_format($item->book->price / 100, config('shop.currency_decimals'), config('shop.currency_decimal_sep'), ' ') }}&nbsp;{{ config('shop.currency_symbol') }}
                             </p>
                         </div>
 
@@ -98,7 +98,7 @@
                         @foreach($items as $item)
                             <div class="flex justify-between gap-2 text-sm text-text-muted">
                                 <span class="truncate">{{ $item->book->title }}</span>
-                                <span class="shrink-0">{{ number_format($item->book->price / 100, 0, ',', ' ') }}&nbsp;₽</span>
+                                <span class="shrink-0">{{ number_format($item->book->price / 100, config('shop.currency_decimals'), config('shop.currency_decimal_sep'), ' ') }}&nbsp;{{ config('shop.currency_symbol') }}</span>
                             </div>
                         @endforeach
                     </div>
@@ -107,7 +107,7 @@
                     <div class="border-t border-border-subtle pt-4 mb-6 flex justify-between items-baseline">
                         <span class="font-sans text-sm font-semibold text-text-primary">К оплате</span>
                         <span class="font-serif text-xl font-semibold text-text-primary">
-                            {{ number_format($total / 100, 0, ',', ' ') }}&nbsp;₽
+                            {{ number_format($total / 100, 0, ',', ' ') }}&nbsp;{{ config('shop.currency_symbol') }}
                         </span>
                     </div>
 
@@ -150,7 +150,7 @@
                                     @submit="
                                         if (typeof gtag !== 'undefined') {
                                             gtag('event', 'begin_checkout', {
-                                                currency: 'RUB',
+                                                currency: '{{ config('shop.currency_code') }}',
                                                 value: Number($el.dataset.gaValue),
                                                 items: JSON.parse($el.dataset.gaItems)
                                             });

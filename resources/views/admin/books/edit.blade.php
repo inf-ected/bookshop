@@ -131,7 +131,7 @@
                 {{-- Price --}}
                 <div>
                     <label for="price" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Цена (в рублях) <span class="text-error">*</span>
+                        Цена ({{ config('shop.currency_symbol') }}) <span class="text-error">*</span>
                     </label>
                     <input
                         id="price"
@@ -146,7 +146,7 @@
                             @error('price') border-error-dot bg-error-light @else border-border-subtle @enderror"
                     >
                     <p class="mt-1 text-xs text-text-subtle">
-                        Текущая цена: {{ number_format($book->price / 100, 0, '.', ' ') }} ₽
+                        Текущая цена: {{ number_format($book->price / 100, config('shop.currency_decimals'), config('shop.currency_decimal_sep'), ' ') }} {{ config('shop.currency_symbol') }}
                     </p>
                     @error('price')
                         <p class="mt-1.5 text-xs text-error">{{ $message }}</p>

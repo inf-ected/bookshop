@@ -22,7 +22,7 @@ class OrderItemFactory extends Factory
             'order_id' => Order::factory(),
             'book_id' => Book::factory(),
             'price' => fake()->numberBetween(29900, 99900),
-            'currency' => 'RUB',
+            'currency' => config('shop.currency_code'),
         ];
     }
 }

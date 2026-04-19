@@ -41,7 +41,7 @@
 
         <div class="mt-auto pt-3 flex items-center justify-between gap-2">
             <span class="font-sans font-semibold text-sm text-brand-700">
-                {{ number_format($book->price / 100, 0, ',', ' ') }}&nbsp;₽
+                {{ number_format($book->price / 100, config('shop.currency_decimals'), config('shop.currency_decimal_sep'), ' ') }}&nbsp;{{ config('shop.currency_symbol') }}
             </span>
 
             @unless(auth()->user()?->isAdmin())
@@ -64,7 +64,7 @@
                         @submit="
                             if (typeof gtag !== 'undefined') {
                                 gtag('event', 'add_to_cart', {
-                                    currency: 'RUB',
+                                    currency: '{{ config('shop.currency_code') }}',
                                     value: Number($el.dataset.gaPrice),
                                     items: [{ item_id: $el.dataset.gaId, item_name: $el.dataset.gaName, price: Number($el.dataset.gaPrice) }]
                                 });

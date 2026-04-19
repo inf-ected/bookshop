@@ -7,7 +7,7 @@
         if (typeof gtag !== 'undefined') {
             gtag('event', 'purchase', {
                 transaction_id: '{{ $order->id }}',
-                currency: 'RUB',
+                currency: '{{ config('shop.currency_code') }}',
                 value: {{ $order->total_amount / 100 }},
                 items: [
                     @foreach ($order->items as $item)

@@ -125,7 +125,7 @@
                 {{-- Price --}}
                 <div>
                     <label for="price" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Цена (в рублях) <span class="text-error">*</span>
+                        Цена ({{ config('shop.currency_symbol') }}) <span class="text-error">*</span>
                     </label>
                     <div class="relative">
                         <input
@@ -139,10 +139,10 @@
                             class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface placeholder:text-text-subtle transition
                                 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
                                 @error('price') border-error-dot bg-error-light @else border-border-subtle @enderror"
-                            placeholder="499"
+                            placeholder="9.99"
                         >
                     </div>
-                    <p class="mt-1 text-xs text-text-subtle">Введите сумму в рублях. Например: 499</p>
+                    <p class="mt-1 text-xs text-text-subtle">Введите сумму в {{ config('shop.currency_symbol') }}. Например: 9.99</p>
                     @error('price')
                         <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror

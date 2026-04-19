@@ -27,7 +27,7 @@ class BookFactory extends Factory
             'excerpt' => fake()->paragraphs(3, true),
             'fragment' => fake()->paragraphs(10, true),
             'price' => fake()->numberBetween(29900, 99900),
-            'currency' => 'RUB',
+            'currency' => config('shop.currency_code'),
             'cover_path' => null,
             'cover_thumb_path' => null,
             'epub_path' => null,

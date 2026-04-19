@@ -9,7 +9,7 @@
         'offers' => [
             '@type' => 'Offer',
             'price' => number_format($book->price / 100, 2, '.', ''),
-            'priceCurrency' => 'RUB',
+            'priceCurrency' => config('shop.currency_code'),
             'availability' => 'https://schema.org/InStock',
         ],
     ];
@@ -76,7 +76,7 @@
             {{-- Price + CTA --}}
             <div class="flex items-center gap-4 flex-wrap">
                 <span class="font-sans text-2xl font-bold text-brand-700">
-                    {{ number_format($book->price / 100, 0, ',', ' ') }}&nbsp;₽
+                    {{ number_format($book->price / 100, config('shop.currency_decimals'), config('shop.currency_decimal_sep'), ' ') }}&nbsp;{{ config('shop.currency_symbol') }}
                 </span>
 
                 {{-- Cart / library CTA — hidden for admins --}}

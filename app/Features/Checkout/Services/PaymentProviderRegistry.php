@@ -25,10 +25,27 @@ class PaymentProviderRegistry
     public function __construct(private readonly array $definitions) {}
 
     /**
-     * All providers that are currently enabled, keyed by slug.
+     * Slugs of all currently enabled providers.
      *
-     * Used by CheckoutController to build the payment method selector and validate
-     * the `provider` request parameter.
+     * Only checks the `enabled` closure — does NOT instantiate providers.
+     * Use this for rendering UI (e.g. cart checkout buttons) and for request validation,
+     * where you need the list of valid slugs but not the provider objects themselves.
+     *
+     * @return list<string>
+     */
+    public function availableSlugs(): array
+    {
+        return array_values(array_filter(
+            array_keys($this->definitions),
+            fn (string $slug): bool => ($this->definitions[$slug]['enabled'])(),
+        ));
+    }
+
+    /**
+     * All currently enabled providers, keyed by slug.
+     *
+     * Instantiates each enabled provider on first call. Use only in paths that
+     * actually need provider objects (e.g. after the checkout form is submitted).
      *
      * @return array<string, PaymentProvider>
      */

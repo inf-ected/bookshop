@@ -35,7 +35,7 @@ class CheckoutController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'provider' => ['required', 'string', 'in:'.implode(',', array_keys($this->registry->available()))],
+            'provider' => ['required', 'string', 'in:'.implode(',', $this->registry->availableSlugs())],
         ]);
 
         $paymentProvider = $this->registry->get($request->input('provider'));

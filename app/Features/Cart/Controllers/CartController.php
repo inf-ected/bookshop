@@ -27,7 +27,7 @@ class CartController extends Controller
 
         $items = $this->cartService->getItems($user, $sessionId);
         $total = $this->cartService->getTotalFromItems($items);
-        $paymentProviders = array_keys($this->paymentRegistry->available());
+        $paymentProviders = $this->paymentRegistry->availableSlugs();
 
         return view('cart.index', compact('items', 'total', 'paymentProviders'));
     }

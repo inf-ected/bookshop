@@ -74,10 +74,12 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
             $order->load('items.book');
         }
 
-        $lineItems = $order->items->map(function (OrderItem $item): array {
+        $currency = strtolower($order->currency);
+
+        $lineItems = $order->items->map(function (OrderItem $item) use ($currency): array {
             return [
                 'price_data' => [
-                    'currency' => strtolower($order->currency),
+                    'currency' => $currency,
                     'unit_amount' => $item->price,
                     'product_data' => [
                         'name' => $item->book->title,

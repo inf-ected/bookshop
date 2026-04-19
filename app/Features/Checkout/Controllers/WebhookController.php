@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 class WebhookController extends Controller
@@ -27,7 +28,7 @@ class WebhookController extends Controller
         try {
             $webhookHandler = $this->registry->webhookProvider($provider);
         } catch (InvalidArgumentException $e) {
-            Log::warning('Webhook received for unknown provider', ['provider' => $provider]);
+            Log::warning('Webhook received for unknown provider', ['provider' => Str::limit($provider, 50)]);
 
             return response('Unknown provider', 400);
         }

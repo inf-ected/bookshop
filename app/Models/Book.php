@@ -6,22 +6,36 @@ namespace App\Models;
 
 use App\Enums\BookStatus;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 /**
+ * @property int $id
+ * @property string $title
+ * @property string $slug
+ * @property string|null $annotation
+ * @property string|null $excerpt
+ * @property string|null $fragment
+ * @property int $price
+ * @property string $currency
+ * @property string|null $cover_path
+ * @property string|null $cover_thumb_path
+ * @property string|null $epub_path
  * @property BookStatus $status
  * @property bool $is_featured
  * @property bool $is_available
  * @property bool $is_adult
- * @property int $price
+ * @property int $sort_order
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read string|null $cover_url
  * @property-read string|null $cover_thumb_url
- * @property string|null $epub_path
- * @property int $id
+ * @property-read Collection<int, UserBook> $userBooks
  */
 class Book extends Model
 {

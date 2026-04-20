@@ -99,7 +99,7 @@
                                 </td>
 
                                 <td class="px-4 py-3 text-text-primary font-medium">
-                                    {{ number_format($order->total_amount / 100, 0, '.', ' ') }} {{ config('shop.currency_symbol') }}
+                                    {{ number_format($order->total_amount / 100, config('shop.currency_decimals'), config('shop.currency_decimal_sep'), ' ') }} {{ config('shop.currency_symbol') }}
                                 </td>
 
                                 {{-- Status badge --}}

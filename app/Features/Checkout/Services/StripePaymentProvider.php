@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Checkout\Services;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentGateway;
 use App\Features\Checkout\Contracts\PaymentProvider;
 use App\Features\Checkout\Contracts\SupportsWebhooks;
 use App\Features\Checkout\Exceptions\PaymentException;
@@ -23,13 +24,12 @@ use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\Stripe;
 use Stripe\Webhook;
-use Throwable;
 use UnexpectedValueException;
 
 readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhooks
 {
     /**
-     * @throws Throwable
+     * @throws RuntimeException if STRIPE_SECRET or STRIPE_WEBHOOK_SECRET are not configured
      */
     public function __construct(private OrderService $orderService)
     {
@@ -42,9 +42,9 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
         Stripe::setApiKey($secret);
     }
 
-    public function getName(): string
+    public function getName(): PaymentGateway
     {
-        return 'stripe';
+        return PaymentGateway::Stripe;
     }
 
     public function extractReturnSessionId(Request $request): ?string
@@ -73,10 +73,12 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
             $order->load('items.book');
         }
 
-        $lineItems = $order->items->map(function (OrderItem $item): array {
+        $currency = strtolower($order->currency);
+
+        $lineItems = $order->items->map(function (OrderItem $item) use ($currency): array {
             return [
                 'price_data' => [
-                    'currency' => strtolower((string) config('shop.currency_code')),
+                    'currency' => $currency,
                     'unit_amount' => $item->price,
                     'product_data' => [
                         'name' => $item->book->title,
@@ -90,7 +92,7 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
             $session = Session::create([
                 'mode' => 'payment',
                 'line_items' => $lineItems,
-                'success_url' => route('checkout.success').'?session_id={CHECKOUT_SESSION_ID}',
+                'success_url' => route('checkout.success').'?provider='.$this->getName()->value.'&session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => route('cart.index'),
                 'client_reference_id' => (string) $order->id,
                 'customer_email' => $user->email,
@@ -107,10 +109,10 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
         // into the orders table (business entity stays provider-agnostic).
         OrderTransaction::query()->create([
             'order_id' => $order->id,
-            'provider' => 'stripe',
+            'provider' => $this->getName()->value,
             'provider_data' => [
                 'session_id' => $session->id,
-                'payment_intent' => $session->payment_intent,
+                'transaction_id' => $session->payment_intent,
             ],
             'status' => 'pending',
             'expires_at' => Carbon::createFromTimestamp($session->expires_at),
@@ -130,10 +132,13 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
      * Rule 30: idempotency via order_transactions — skip if already paid.
      *
      * @throws PaymentException on signature verification failure or invalid payload
-     * @throws Throwable
      */
-    public function handleWebhook(string $payload, string $signature): void
+    public function handleWebhook(string $payload, array $headers): void
     {
+        $signature = is_array($headers['stripe-signature'] ?? null)
+            ? implode(',', $headers['stripe-signature'])
+            : (string) ($headers['stripe-signature'] ?? '');
+
         try {
             $event = Webhook::constructEvent(
                 $payload,
@@ -166,12 +171,12 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
     private function handleSessionCompleted(Session $session): void
     {
         $stripeSessionId = $session->id;
-        $paymentIntentId = is_string($session->payment_intent)
+        $transactionId = is_string($session->payment_intent)
             ? $session->payment_intent
             : (string) ($session->payment_intent->id ?? '');
 
         // Look up order via order_transactions (provider-agnostic approach)
-        $order = $this->orderService->findByProviderSession('stripe', $stripeSessionId);
+        $order = $this->orderService->findByProviderSession($this->getName()->value, $stripeSessionId);
 
         if ($order === null) {
             Log::warning('Stripe webhook: order not found for session', [
@@ -213,7 +218,7 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
         // Dispatch queued job — Rule 29, 30, 31
         ProcessPaymentConfirmation::dispatch(
             $order->id,
-            $paymentIntentId,
+            $transactionId,
             $stripeSessionId,
             $this->getName(),
         );
@@ -222,14 +227,12 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
     /**
      * Process an expired Stripe Checkout session.
      * Marks the transaction and order as failed if still pending.
-     *
-     * @throws Throwable
      */
     private function handleSessionExpired(Session $session): void
     {
         $stripeSessionId = $session->id;
 
-        $transaction = $this->orderService->findTransactionByProviderData('stripe', 'session_id', $stripeSessionId);
+        $transaction = $this->orderService->findTransactionByProviderData($this->getName()->value, 'session_id', $stripeSessionId);
 
         if ($transaction === null) {
             Log::warning('Stripe webhook: transaction not found for expired session', [
@@ -241,6 +244,7 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
 
         // Only transition pending transactions — avoid overwriting already-settled states
         if ($transaction->status === 'pending') {
+            /** @noinspection PhpUnhandledExceptionInspection */
             DB::transaction(function () use ($transaction, $stripeSessionId): void {
                 $transaction->status = 'expired';
                 $transaction->save();

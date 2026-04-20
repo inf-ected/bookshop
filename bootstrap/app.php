@@ -26,9 +26,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->appendToGroup('web', CheckNotBanned::class);
 
-        // Exempt Stripe webhook from CSRF verification (Rule 35 — signature verified inside controller)
+        // Exempt all payment provider webhooks from CSRF verification (Rule 35 — signature verified inside each provider)
         $middleware->validateCsrfTokens(except: [
-            '/webhooks/stripe',
+            '/webhooks/*',
         ]);
     })
     ->withCommands([

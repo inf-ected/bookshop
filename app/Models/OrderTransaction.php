@@ -11,10 +11,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
+ * @property int $id
+ * @property int $order_id
  * @property string $provider
  * @property array<string, mixed> $provider_data
  * @property string $status
  * @property Carbon|null $expires_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Order|null $order
  */
 class OrderTransaction extends Model
 {

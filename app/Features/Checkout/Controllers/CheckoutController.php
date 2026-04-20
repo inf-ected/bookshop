@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Features\Checkout\Controllers;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentGateway;
 use App\Features\Cart\Exceptions\EmptyCartException;
-use App\Features\Checkout\Contracts\PaymentProvider;
 use App\Features\Checkout\Exceptions\PaymentException;
 use App\Features\Checkout\Services\OrderService;
+use App\Features\Checkout\Services\PaymentProviderRegistry;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,7 +24,7 @@ class CheckoutController extends Controller
 {
     public function __construct(
         private readonly OrderService $orderService,
-        private readonly PaymentProvider $paymentProvider,
+        private readonly PaymentProviderRegistry $registry,
     ) {}
 
     /**
@@ -34,6 +36,11 @@ class CheckoutController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $request->validate([
+            'provider' => ['required', 'string', 'in:'.implode(',', $this->registry->availableSlugs())],
+        ]);
+
+        $paymentProvider = $this->registry->get(PaymentGateway::from($request->input('provider')));
         $user = $request->user();
 
         try {
@@ -43,10 +50,10 @@ class CheckoutController extends Controller
         }
 
         try {
-            $session = $this->paymentProvider->createSession($order, $user);
-        } catch (PaymentException $e) {
+            $session = $paymentProvider->createSession($order, $user);
+        } catch (PaymentException|ConnectionException $e) {
             Log::error('Payment provider error during session creation', [
-                'provider' => $this->paymentProvider->getName(),
+                'provider' => $paymentProvider->getName()->value,
                 'order_id' => $order->id,
                 'error' => $e->getMessage(),
             ]);
@@ -58,54 +65,59 @@ class CheckoutController extends Controller
                 ->withErrors(['cart' => 'Ошибка при создании платежа. Попробуйте позже.']);
         }
 
-        // Store provider name in session so success() can resolve the correct transaction
-        session(['payment_provider' => $this->paymentProvider->getName()]);
-
         return redirect()->away($session['url']);
     }
 
     /**
      * Handle the provider's success redirect.
      *
+     * Provider is detected from the return URL query params — each provider uses a
+     * distinct parameter (Stripe: session_id, PayPal: token). This avoids session-based
+     * provider tracking, which breaks when a user has multiple checkout tabs open and
+     * the session key gets overwritten by the later provider.
+     *
      * Rule 33: If order is already paid (webhook was faster), redirect to library.
-     * Otherwise show polling page.
+     * Otherwise, show polling page.
      */
     public function success(Request $request): View|RedirectResponse
     {
-        $provider = session('payment_provider', $this->paymentProvider->getName());
+        $gateway = PaymentGateway::tryFrom((string) $request->query('provider', ''));
 
-        // extractReturnSessionId() is intentionally delegated to the injected singleton.
-        // The session value above is used only to scope the transaction lookup by provider name.
-        // When a second provider (e.g. PayPal) is added, this controller will need to resolve
-        // the correct provider instance by name before calling extractReturnSessionId/handleReturn.
-        $sessionId = $this->paymentProvider->extractReturnSessionId($request);
-
-        if ($sessionId) {
-            $order = $this->orderService->findByProviderSession($provider, $sessionId, $request->user()->id);
-
-            if ($order) {
-                // Allow provider to perform any post-redirect action (e.g. PayPal capture)
-                try {
-                    $this->paymentProvider->handleReturn($request, $order);
-                } catch (PaymentException $e) {
-                    Log::error('Payment provider error on return redirect', [
-                        'provider' => $provider,
-                        'order_id' => $order->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-
-                // Rule 33: if already paid, redirect to library
-                if ($order->status === OrderStatus::Paid) {
-                    return redirect()->route('cabinet.library')
-                        ->with('success', 'Оплата прошла успешно! Книги добавлены в вашу библиотеку.');
-                }
-
-                return view('checkout.success', ['order' => $order]);
-            }
+        if ($gateway === null || ! $this->registry->isEnabled($gateway)) {
+            return view('checkout.success', ['order' => null]);
         }
 
-        return view('checkout.success', ['order' => null]);
+        $provider = $this->registry->get($gateway);
+        $sessionId = $provider->extractReturnSessionId($request);
+
+        if ($sessionId === null) {
+            return view('checkout.success', ['order' => null]);
+        }
+
+        $order = $this->orderService->findByProviderSession($gateway->value, $sessionId, $request->user()->id);
+
+        if ($order === null) {
+            return view('checkout.success', ['order' => null]);
+        }
+
+        try {
+            $provider->handleReturn($request, $order);
+        } catch (PaymentException|ConnectionException $e) {
+            Log::error('Payment provider error on return redirect', [
+                'provider' => $gateway->value,
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        $order->refresh();
+
+        if ($order->status === OrderStatus::Paid) {
+            return redirect()->route('cabinet.library')
+                ->with('success', 'Оплата прошла успешно! Книги добавлены в вашу библиотеку.');
+        }
+
+        return view('checkout.success', ['order' => $order]);
     }
 
     /**

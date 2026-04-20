@@ -317,7 +317,7 @@
                                 <p class="text-xs text-text-subtle mt-0.5">{{ $order->created_at->format('d.m.Y H:i') }}</p>
                             </div>
                             <p class="text-sm font-medium text-text-primary shrink-0">
-                                {{ number_format($order->total_amount / 100, 0, '.', ' ') }} {{ config('shop.currency_symbol') }}
+                                {{ number_format($order->total_amount / 100, config('shop.currency_decimals'), config('shop.currency_decimal_sep'), ' ') }} {{ config('shop.currency_symbol') }}
                             </p>
                         </div>
                     @endforeach

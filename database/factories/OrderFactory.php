@@ -71,7 +71,7 @@ class OrderFactory extends Factory
             ];
 
             if ($paymentIntent !== '') {
-                $providerData['payment_intent'] = $paymentIntent;
+                $providerData['transaction_id'] = $paymentIntent;
             }
 
             $transactionStatus = match ($order->status) {

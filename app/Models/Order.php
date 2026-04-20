@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\OrderStatus;
 use Database\Factories\OrderFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,9 +15,19 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
+ * @property int $id
+ * @property int $user_id
  * @property OrderStatus $status
- * @property Carbon|null $paid_at
  * @property int $total_amount
+ * @property string $currency
+ * @property Carbon|null $paid_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read User $user
+ * @property-read Collection<int, OrderItem> $items
+ * @property-read Collection<int, UserBook> $userBooks
+ * @property-read Collection<int, OrderTransaction> $transactions
+ * @property-read OrderTransaction|null $transaction
  */
 class Order extends Model
 {

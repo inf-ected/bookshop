@@ -43,7 +43,7 @@ class OrderTransactionFactory extends Factory
             'expires_at' => null,
             'provider_data' => [
                 'session_id' => 'cs_test_'.fake()->regexify('[a-zA-Z0-9]{40}'),
-                'payment_intent' => 'pi_test_'.fake()->regexify('[a-zA-Z0-9]{24}'),
+                'transaction_id' => 'pi_test_'.fake()->regexify('[a-zA-Z0-9]{24}'),
             ],
         ]);
     }

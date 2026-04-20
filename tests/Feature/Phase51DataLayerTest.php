@@ -236,7 +236,7 @@ class Phase51DataLayerTest extends TestCase
     public function test_order_transaction_provider_data_cast_to_array(): void
     {
         $transaction = OrderTransaction::factory()->create([
-            'provider_data' => ['session_id' => 'cs_test_abc', 'payment_intent' => 'pi_test_xyz'],
+            'provider_data' => ['session_id' => 'cs_test_abc', 'transaction_id' => 'pi_test_xyz'],
         ]);
 
         $fresh = $transaction->fresh();

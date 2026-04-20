@@ -87,8 +87,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/checkout/status/{order}', [CheckoutController::class, 'status'])->name('checkout.status');
 });
 
-// Stripe webhook — no CSRF, no auth middleware (Rule 35)
-Route::post('/webhooks/stripe', [WebhookController::class, 'handleStripe'])->name('webhooks.stripe');
+// Payment provider webhooks — no CSRF, no auth middleware (Rule 35).
+// Signature verification is performed inside each provider (Rule 35).
+Route::post('/webhooks/{provider}', [WebhookController::class, 'handle'])->name('webhooks.handle');
 
 // Download (auth + verified + rate limited)
 Route::get('/books/{book:slug}/download', [DownloadController::class, 'show'])

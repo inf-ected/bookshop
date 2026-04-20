@@ -68,6 +68,15 @@ return [
         'secret' => env('STRIPE_SECRET'),
         'public' => env('STRIPE_KEY'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'enabled' => (bool) env('STRIPE_ENABLED', true),
+    ],
+
+    'paypal' => [
+        'client_id' => env('PAYPAL_CLIENT_ID'),
+        'client_secret' => env('PAYPAL_CLIENT_SECRET'),
+        'webhook_id' => env('PAYPAL_WEBHOOK_ID'),
+        'mode' => env('PAYPAL_MODE', 'sandbox'),
+        'enabled' => (bool) env('PAYPAL_ENABLED', false),
     ],
 
     'google_analytics_id' => env('GOOGLE_ANALYTICS_ID'),

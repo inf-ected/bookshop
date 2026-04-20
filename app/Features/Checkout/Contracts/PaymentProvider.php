@@ -4,17 +4,19 @@ declare(strict_types=1);
 
 namespace App\Features\Checkout\Contracts;
 
+use App\Enums\PaymentGateway;
 use App\Features\Checkout\Exceptions\PaymentException;
 use App\Models\Order;
 use App\Models\User;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 
 interface PaymentProvider
 {
     /**
-     * Provider slug used for storage and routing (e.g. 'stripe', 'paypal').
+     * Provider identifier used for DB storage and routing.
      */
-    public function getName(): string;
+    public function getName(): PaymentGateway;
 
     /**
      * Create a payment session for the given order and user.
@@ -23,6 +25,7 @@ interface PaymentProvider
      * @return array{id: string, url: string}
      *
      * @throws PaymentException
+     * @throws ConnectionException
      */
     public function createSession(Order $order, User $user): array;
 
@@ -39,6 +42,7 @@ interface PaymentProvider
      * Stripe: no-op (payment is confirmed via webhook).
      *
      * @throws PaymentException
+     * @throws ConnectionException
      */
     public function handleReturn(Request $request, Order $order): void;
 }

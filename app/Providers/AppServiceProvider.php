@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Enums\PaymentGateway;
 use App\Features\Cart\Listeners\MergeGuestCartOnLogin;
-use App\Features\Checkout\Contracts\PaymentProvider;
-use App\Features\Checkout\Contracts\SupportsWebhooks;
-use App\Features\Checkout\Controllers\WebhookController;
 use App\Features\Checkout\Events\OrderPaid;
 use App\Features\Checkout\Listeners\SendOrderConfirmationEmail;
+use App\Features\Checkout\Services\PaymentProviderRegistry;
+use App\Features\Checkout\Services\PayPalPaymentProvider;
 use App\Features\Checkout\Services\StripePaymentProvider;
 use App\Features\Newsletter\Listeners\AddContactToNewsletter;
 use App\Features\Pages\Observers\BookObserver;
@@ -38,16 +38,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(
-            PaymentProvider::class,
-            StripePaymentProvider::class,
-        );
-
-        // Bind SupportsWebhooks for WebhookController — currently Stripe only.
-        // When adding PayPal: add a separate contextual binding or introduce a provider registry.
-        $this->app->when(WebhookController::class)
-            ->needs(SupportsWebhooks::class)
-            ->give(StripePaymentProvider::class);
+        // Registry is the single source of truth for all payment provider resolution —
+        // both checkout (available providers) and webhooks (by slug).
+        // Each definition declares an `enabled` closure (checked at runtime against config)
+        // and a lazy `factory` closure (instantiated on first access to avoid boot-time
+        // credential failures for unconfigured providers).
+        $this->app->singleton(PaymentProviderRegistry::class, function ($app): PaymentProviderRegistry {
+            return new PaymentProviderRegistry([
+                PaymentGateway::Stripe->value => [
+                    'enabled' => fn (): bool => (bool) config('services.stripe.enabled', true),
+                    'factory' => fn (): StripePaymentProvider => $app->make(StripePaymentProvider::class),
+                ],
+                PaymentGateway::PayPal->value => [
+                    'enabled' => fn (): bool => (bool) config('services.paypal.enabled', false),
+                    'factory' => fn (): PayPalPaymentProvider => $app->make(PayPalPaymentProvider::class),
+                ],
+            ]);
+        });
     }
 
     /**

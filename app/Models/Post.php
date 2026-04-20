@@ -12,14 +12,17 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * @property PostStatus $status
+ * @property int $id
  * @property string $title
  * @property string $slug
  * @property string|null $excerpt
  * @property string $body
  * @property string|null $cover_path
  * @property string|null $cover_thumb_path
+ * @property PostStatus $status
  * @property Carbon|null $published_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read string|null $cover_url
  * @property-read string|null $cover_thumb_url
  */

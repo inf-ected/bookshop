@@ -31,6 +31,7 @@ class ExpirePendingOrdersCommand extends Command
 
         foreach ($expiredTransactions as $transaction) {
             DB::transaction(function () use ($transaction, &$expiredCount): void {
+                /** @var OrderTransaction $transaction */
                 $transaction->status = 'expired';
                 $transaction->save();
 
@@ -47,7 +48,7 @@ class ExpirePendingOrdersCommand extends Command
             });
         }
 
-        $this->info("Expired {$expiredCount} pending order(s).");
+        $this->info("Expired $expiredCount pending order(s).");
 
         return self::SUCCESS;
     }

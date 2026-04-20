@@ -17,6 +17,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $order_id
  * @property Carbon $granted_at
  * @property Carbon|null $revoked_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read User $user
+ * @property-read Book $book
+ * @property-read Order|null $order
  */
 class UserBook extends Model
 {

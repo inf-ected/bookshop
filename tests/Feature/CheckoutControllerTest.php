@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentGateway;
 use App\Features\Checkout\Contracts\PaymentProvider;
 use App\Features\Checkout\Exceptions\PaymentException;
+use App\Features\Checkout\Services\PaymentProviderRegistry;
 use App\Models\Book;
 use App\Models\CartItem;
 use App\Models\Order;
@@ -30,43 +32,61 @@ class CheckoutControllerTest extends TestCase
     {
         parent::setUp();
 
-        // Bind a fake PaymentProvider so tests never hit real Stripe API.
-        // The fake also creates an OrderTransaction to match real provider behaviour —
+        // Register a fake 'stripe' provider via the registry so tests never hit real Stripe API.
+        // The fake creates an OrderTransaction to match real provider behaviour —
         // the provider is responsible for persisting provider-specific data.
-        $this->app->bind(PaymentProvider::class, function () {
-            return new class($this->fakeSession) implements PaymentProvider
+        $this->bindFakeRegistry($this->makeFakeProvider($this->fakeSession));
+    }
+
+    /**
+     * Build a fake PaymentProvider that returns the given session.
+     *
+     * @param  array{id: string, url: string}  $session
+     */
+    private function makeFakeProvider(array $session): PaymentProvider
+    {
+        return new class($session) implements PaymentProvider
+        {
+            /** @param array{id: string, url: string} $session */
+            public function __construct(private readonly array $session) {}
+
+            public function getName(): PaymentGateway
             {
-                /** @param array{id: string, url: string} $session */
-                public function __construct(private readonly array $session) {}
+                return PaymentGateway::Stripe;
+            }
 
-                public function getName(): string
-                {
-                    return 'stripe';
-                }
+            public function createSession(Order $order, User $user): array
+            {
+                OrderTransaction::query()->create([
+                    'order_id' => $order->id,
+                    'provider' => PaymentGateway::Stripe->value,
+                    'provider_data' => ['session_id' => $this->session['id']],
+                    'status' => 'pending',
+                    'expires_at' => now()->addMinutes(30),
+                ]);
 
-                public function createSession(Order $order, User $user): array
-                {
-                    OrderTransaction::query()->create([
-                        'order_id' => $order->id,
-                        'provider' => 'stripe',
-                        'provider_data' => ['session_id' => $this->session['id']],
-                        'status' => 'pending',
-                        'expires_at' => now()->addMinutes(30),
-                    ]);
+                return $this->session;
+            }
 
-                    return $this->session;
-                }
+            public function extractReturnSessionId(Request $request): ?string
+            {
+                $value = $request->query('session_id');
 
-                public function extractReturnSessionId(Request $request): ?string
-                {
-                    $value = $request->query('session_id');
+                return is_string($value) ? $value : null;
+            }
 
-                    return is_string($value) ? $value : null;
-                }
+            public function handleReturn(Request $request, Order $order): void {}
+        };
+    }
 
-                public function handleReturn(Request $request, Order $order): void {}
-            };
-        });
+    private function bindFakeRegistry(PaymentProvider $provider): void
+    {
+        $this->app->instance(PaymentProviderRegistry::class, new PaymentProviderRegistry([
+            PaymentGateway::Stripe->value => [
+                'enabled' => fn (): bool => true,
+                'factory' => fn (): PaymentProvider => $provider,
+            ],
+        ]));
     }
 
     // -------------------------------------------------------------------------
@@ -90,6 +110,19 @@ class CheckoutControllerTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // Provider validation
+    // -------------------------------------------------------------------------
+
+    public function test_checkout_store_rejects_invalid_provider(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post(route('checkout.store'), ['provider' => 'unknown']);
+
+        $response->assertSessionHasErrors('provider');
+    }
+
+    // -------------------------------------------------------------------------
     // Empty cart
     // -------------------------------------------------------------------------
 
@@ -97,7 +130,7 @@ class CheckoutControllerTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->post(route('checkout.store'));
+        $response = $this->actingAs($user)->post(route('checkout.store'), ['provider' => 'stripe']);
 
         $response->assertRedirect(route('cart.index'));
         $response->assertSessionHasErrors('cart');
@@ -117,7 +150,7 @@ class CheckoutControllerTest extends TestCase
 
         CartItem::factory()->create(['user_id' => $user->id, 'book_id' => $book->id]);
 
-        $response = $this->actingAs($user)->post(route('checkout.store'));
+        $response = $this->actingAs($user)->post(route('checkout.store'), ['provider' => 'stripe']);
 
         // Rule 27: order created before redirect
         $this->assertDatabaseCount('orders', 1);
@@ -155,7 +188,7 @@ class CheckoutControllerTest extends TestCase
 
         CartItem::factory()->create(['user_id' => $user->id, 'book_id' => $book->id]);
 
-        $this->actingAs($user)->post(route('checkout.store'));
+        $this->actingAs($user)->post(route('checkout.store'), ['provider' => 'stripe']);
 
         $order = Order::query()->first();
 
@@ -175,7 +208,7 @@ class CheckoutControllerTest extends TestCase
         CartItem::factory()->create(['user_id' => $user->id, 'book_id' => $book1->id]);
         CartItem::factory()->create(['user_id' => $user->id, 'book_id' => $book2->id]);
 
-        $this->actingAs($user)->post(route('checkout.store'));
+        $this->actingAs($user)->post(route('checkout.store'), ['provider' => 'stripe']);
 
         $order = Order::query()->first();
 
@@ -188,27 +221,25 @@ class CheckoutControllerTest extends TestCase
 
     public function test_payment_provider_failure_marks_order_failed_and_redirects_to_cart(): void
     {
-        // Override the fake with one that throws a PaymentException
-        $this->app->bind(PaymentProvider::class, function () {
-            return new class implements PaymentProvider
+        // Override with a fake that throws PaymentException on createSession
+        $this->bindFakeRegistry(new class implements PaymentProvider
+        {
+            public function getName(): PaymentGateway
             {
-                public function getName(): string
-                {
-                    return 'stripe';
-                }
+                return PaymentGateway::Stripe;
+            }
 
-                public function createSession(Order $order, User $user): array
-                {
-                    throw new PaymentException('Payment provider error');
-                }
+            public function createSession(Order $order, User $user): array
+            {
+                throw new PaymentException('Payment provider error');
+            }
 
-                public function extractReturnSessionId(Request $request): ?string
-                {
-                    return null;
-                }
+            public function extractReturnSessionId(Request $request): ?string
+            {
+                return null;
+            }
 
-                public function handleReturn(Request $request, Order $order): void {}
-            };
+            public function handleReturn(Request $request, Order $order): void {}
         });
 
         $user = User::factory()->create();
@@ -216,7 +247,7 @@ class CheckoutControllerTest extends TestCase
 
         CartItem::factory()->create(['user_id' => $user->id, 'book_id' => $book->id]);
 
-        $response = $this->actingAs($user)->post(route('checkout.store'));
+        $response = $this->actingAs($user)->post(route('checkout.store'), ['provider' => 'stripe']);
 
         // Order should exist but be marked as failed
         $this->assertDatabaseCount('orders', 1);
@@ -258,11 +289,11 @@ class CheckoutControllerTest extends TestCase
         $order = Order::factory()->paid()->create(['user_id' => $user->id]);
         OrderTransaction::factory()->succeeded()->create([
             'order_id' => $order->id,
-            'provider_data' => ['session_id' => 'cs_test_already_paid', 'payment_intent' => 'pi_x'],
+            'provider_data' => ['session_id' => 'cs_test_already_paid', 'transaction_id' => 'pi_x'],
         ]);
 
         $response = $this->actingAs($user)
-            ->get(route('checkout.success').'?session_id=cs_test_already_paid');
+            ->get(route('checkout.success').'?provider=stripe&session_id=cs_test_already_paid');
 
         $response->assertRedirect('/cabinet/library');
     }
@@ -277,7 +308,7 @@ class CheckoutControllerTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)
-            ->get(route('checkout.success').'?session_id=cs_test_pending');
+            ->get(route('checkout.success').'?provider=stripe&session_id=cs_test_pending');
 
         $response->assertOk();
         $response->assertViewIs('checkout.success');

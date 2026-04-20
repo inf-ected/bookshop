@@ -9,6 +9,7 @@ use App\Notifications\VerifyEmailNotification;
 use Carbon\Carbon;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -20,10 +21,16 @@ use Illuminate\Notifications\Notifiable;
  * @property string $email
  * @property Carbon|null $email_verified_at
  * @property string|null $password
+ * @property string|null $remember_token
  * @property UserRole $role
  * @property bool $newsletter_consent
  * @property bool $is_adult_verified
  * @property Carbon|null $banned_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, OAuthProvider> $oauthProviders
+ * @property-read Collection<int, UserBook> $userBooks
+ * @property-read Collection<int, Order> $orders
  */
 class User extends Authenticatable implements MustVerifyEmail
 {

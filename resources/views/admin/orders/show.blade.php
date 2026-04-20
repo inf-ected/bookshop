@@ -69,7 +69,7 @@
 
                 <div>
                     <p class="text-text-subtle text-xs mb-0.5">Сумма</p>
-                    <p class="font-medium text-text-primary">{{ number_format($order->total_amount / 100, 0, '.', ' ') }} {{ config('shop.currency_symbol') }}</p>
+                    <p class="font-medium text-text-primary">{{ number_format($order->total_amount / 100, config('shop.currency_decimals'), config('shop.currency_decimal_sep'), ' ') }} {{ config('shop.currency_symbol') }}</p>
                 </div>
 
                 <div>
@@ -151,7 +151,7 @@
             <div class="px-6 py-4 bg-surface-muted border-t border-border-subtle flex justify-between items-center">
                 <span class="text-sm font-semibold text-text-primary">Итого</span>
                 <span class="font-serif text-lg font-semibold text-text-primary">
-                    {{ number_format($order->total_amount / 100, 0, '.', ' ') }} {{ config('shop.currency_symbol') }}
+                    {{ number_format($order->total_amount / 100, config('shop.currency_decimals'), config('shop.currency_decimal_sep'), ' ') }} {{ config('shop.currency_symbol') }}
                 </span>
             </div>
         </div>
@@ -189,7 +189,7 @@
                         <div class="relative bg-surface rounded-xl shadow-xl p-6 max-w-sm w-full z-10">
                             <h3 class="font-serif text-lg text-text-primary mb-2">Подтвердить возврат?</h3>
                             <p class="text-sm text-text-muted mb-6">
-                                Заказ #{{ $order->id }} будет помечен как возвращённый. Убедитесь, что возврат уже выполнен в Stripe.
+                                Заказ #{{ $order->id }} будет помечен как возвращённый. Убедитесь, что возврат уже выполнен у платёжного провайдера{{ $order->transaction ? ' ('.ucfirst($order->transaction->provider).')' : '' }}.
                             </p>
                             <div class="flex gap-3 justify-end">
                                 <button

@@ -11,7 +11,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('download_logs', function (Blueprint $table) {
-            $table->string('format', 10)->notNull()->default('epub')->after('ip_address');
+            $table->string('format', 10)->default('epub')->after('ip_address');
         });
     }
 

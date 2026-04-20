@@ -56,6 +56,16 @@ class DownloadControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    /**
+     * Full download happy path requires Phase 13.4 DownloadService update
+     * (BookFile-based URL generation instead of epub_path).
+     */
+    #[Group('phase-13-4')]
+    public function test_owner_can_download_book(): void
+    {
+        $this->markTestSkipped('Requires Phase 13.4: DownloadService BookFile-based implementation.');
+    }
+
     public function test_book_without_ready_file_returns_404(): void
     {
         $user = User::factory()->create();

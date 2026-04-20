@@ -34,7 +34,11 @@ class BookFileFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'is_source' => true,
             'status' => BookFileStatus::Ready,
-            'path' => 'books/'.fake()->numberBetween(1, 100).'/'.fake()->uuid().'.'.$attributes['format']->value ?? 'epub',
+            'path' => 'books/'.fake()->numberBetween(1, 100).'/'.fake()->uuid().'.'.(
+                $attributes['format'] instanceof BookFileFormat
+                    ? $attributes['format']->value
+                    : $attributes['format']
+            ),
         ]);
     }
 

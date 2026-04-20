@@ -21,19 +21,14 @@
 ### ~~Конфиг enabled для OAuth-провайдеров~~ ✅ done
 Реализовано: `services.google.enabled` / `services.vk.enabled` в `config/services.php`, управляется через `GOOGLE_OAUTH_ENABLED` / `VK_OAUTH_ENABLED` в `.env`. VK по умолчанию `false`.
 
-### Валюта вынесена в конфиг
-Сейчас `RUB` и `₽` хардкодом разбросаны по ~25 местам: миграции (`default('RUB')`), сервисы (`OrderService`, `StripePaymentProvider`, `BookAdminService`), 14 Blade-шаблонов (символ `₽`), GA4-события и JSON-LD (`priceCurrency`), фабрики и тест-фикстуры. Вынести в `config/shop.php`:
-```php
-'currency_code'   => env('SHOP_CURRENCY', 'RUB'),   // ISO 4217
-'currency_symbol' => env('SHOP_CURRENCY_SYMBOL', '₽'),
-```
-Заменить все хардкоды на `config('shop.currency_code')` / `config('shop.currency_symbol')`.
+### ~~Валюта вынесена в конфиг~~ ✅ done
+Реализовано: `config/shop.php` содержит `currency_code`, `currency_symbol`, `currency_decimals`, `currency_decimal_sep` — управляется через `SHOP_CURRENCY` / `SHOP_CURRENCY_SYMBOL` в `.env`. Все шаблоны используют `config('shop.currency_*')`. Дефолты `RUB` остались только в миграциях (несущественно — значение при создании записи, не используется в бизнес-логике).
 
-### Человекочитаемое имя файла при скачивании книги
-Сейчас скачиваемый файл получает имя вида `a3f7c...uuid...epub` — пользователь вынужден переименовывать вручную перед переносом на Kindle или телефон. Установить `Content-Disposition: attachment; filename="{slug}.epub"` в контроллере скачивания. Слаг уже есть на модели `Book`, безопасен для файловых систем, не содержит спецсимволов. При реализации мультиформата — `{slug}.fb2` и т.д.
+### ~~Человекочитаемое имя файла при скачивании книги~~ ✅ done
+Реализовано: `ResponseContentDisposition` передаётся в `temporaryUrl()` в `DownloadService::generateUrl()`. Браузер получает `{slug}.epub` вместо UUID-пути S3. При мультиформате — заменить расширение на основе формата.
 
-### ~~Конфиг enabled для платёжных систем~~ ✅ done
-Реализовано: `services.stripe.enabled` / `services.paypal.enabled` в `config/services.php`, управляется через `STRIPE_ENABLED` / `PAYPAL_ENABLED` в `.env`. PayPal по умолчанию `false`. `PaymentProviderRegistry` проверяет флаг через lazy closure — не инстанциирует провайдер при `enabled = false`.
+### ~~Конфиг enabled для платёжных систем + PayPal провайдер~~ ✅ done
+Реализовано: `PaymentGateway` enum, `PaymentProvider` / `SupportsWebhooks` контракты, `PaymentProviderRegistry` с lazy factory closures. Stripe и PayPal как полноценные провайдеры. Управляется через `STRIPE_ENABLED` / `PAYPAL_ENABLED` в `.env`. PayPal по умолчанию `false`.
 
 ---
 

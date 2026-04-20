@@ -149,9 +149,7 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
      */
     public function createSession(Order $order, User $user): array
     {
-        if (! $order->relationLoaded('items')) {
-            $order->load('items.book');
-        }
+        $order->load('items.book');
 
         $currency = strtoupper($order->currency);
         $totalAmount = number_format($order->total_amount / 100, 2, '.', '');

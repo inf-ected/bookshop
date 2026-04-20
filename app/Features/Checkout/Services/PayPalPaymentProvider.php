@@ -186,7 +186,7 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
                 ],
             ],
             'application_context' => [
-                'return_url' => route('checkout.success').'?provider='.PaymentGateway::PayPal->value,
+                'return_url' => route('checkout.success').'?provider='.$this->getName()->value,
                 'cancel_url' => route('cart.index'),
                 'brand_name' => config('app.name'),
                 'user_action' => 'PAY_NOW',
@@ -230,7 +230,7 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
 
         OrderTransaction::query()->create([
             'order_id' => $order->id,
-            'provider' => PaymentGateway::PayPal->value,
+            'provider' => $this->getName()->value,
             'provider_data' => [
                 'session_id' => $paypalOrderId,
             ],
@@ -306,7 +306,7 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
 
         $captureId = (string) ($resource['id'] ?? '');
 
-        $order = $this->orderService->findByProviderSession(PaymentGateway::PayPal->value, $paypalOrderId);
+        $order = $this->orderService->findByProviderSession($this->getName()->value, $paypalOrderId);
 
         if ($order === null) {
             Log::warning('PayPal webhook: order not found for PayPal order', [

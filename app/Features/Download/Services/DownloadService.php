@@ -24,9 +24,12 @@ class DownloadService
             throw new \InvalidArgumentException('DOCX format is not available for client download.');
         }
 
+        $clientFilename = $bookFile->book->slug . '.' . $bookFile->format->extension();
+
         return Storage::disk('s3-private-presign')->temporaryUrl(
             $bookFile->path,
             now()->addSeconds(config('bookshop.download_url_ttl', 300)),
+            ['ResponseContentDisposition' => 'attachment; filename="'.$clientFilename.'"'],
         );
     }
 

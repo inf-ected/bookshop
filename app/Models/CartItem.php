@@ -17,8 +17,21 @@ use Illuminate\Support\Carbon;
  * @property int $book_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read User|null $user
  * @property-read Book $book
+ * @property-read User|null $user
+ *
+ * @method static \Database\Factories\CartItemFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CartItem newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CartItem newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CartItem query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CartItem whereBookId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CartItem whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CartItem whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CartItem whereSessionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CartItem whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CartItem whereUserId($value)
+ *
+ * @mixin \Eloquent
  */
 class CartItem extends Model
 {

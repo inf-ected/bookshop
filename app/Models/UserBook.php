@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use Database\Factories\UserBookFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,13 +14,28 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $user_id
  * @property int $book_id
  * @property int|null $order_id
- * @property Carbon $granted_at
- * @property Carbon|null $revoked_at
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * @property-read User $user
+ * @property \Illuminate\Support\Carbon $granted_at
+ * @property \Illuminate\Support\Carbon|null $revoked_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read Book $book
  * @property-read Order|null $order
+ * @property-read User $user
+ *
+ * @method static \Database\Factories\UserBookFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserBook newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserBook newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserBook query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserBook whereBookId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserBook whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserBook whereGrantedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserBook whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserBook whereOrderId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserBook whereRevokedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserBook whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserBook whereUserId($value)
+ *
+ * @mixin \Eloquent
  */
 class UserBook extends Model
 {

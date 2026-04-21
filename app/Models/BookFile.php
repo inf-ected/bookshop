@@ -10,19 +10,18 @@ use Database\Factories\BookFileFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 
 /**
- * @property int $id
- * @property int $book_id
  * @property BookFileFormat $format
  * @property BookFileStatus $status
- * @property string|null $path
- * @property bool $is_source
- * @property string|null $error_message
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * @property-read Book $book
+ * @property-read Book|null $book
+ *
+ * @method static \Database\Factories\BookFileFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BookFile newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BookFile newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BookFile query()
+ *
+ * @mixin \Eloquent
  */
 class BookFile extends Model
 {

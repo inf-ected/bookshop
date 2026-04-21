@@ -15,10 +15,21 @@ use Illuminate\Support\Carbon;
  * @property int $user_id
  * @property int $book_id
  * @property string $ip_address
- * @property string $format
  * @property Carbon $downloaded_at
- * @property-read User $user
  * @property-read Book $book
+ * @property-read User $user
+ *
+ * @method static \Database\Factories\DownloadLogFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DownloadLog newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DownloadLog newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DownloadLog query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DownloadLog whereBookId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DownloadLog whereDownloadedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DownloadLog whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DownloadLog whereIpAddress($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DownloadLog whereUserId($value)
+ *
+ * @mixin \Eloquent
  */
 class DownloadLog extends Model
 {

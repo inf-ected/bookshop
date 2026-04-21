@@ -21,6 +21,21 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User $user
+ *
+ * @method static \Database\Factories\OAuthProviderFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OAuthProvider newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OAuthProvider newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OAuthProvider query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OAuthProvider whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OAuthProvider whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OAuthProvider whereProvider($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OAuthProvider whereProviderId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OAuthProvider whereRefreshToken($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OAuthProvider whereToken($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OAuthProvider whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OAuthProvider whereUserId($value)
+ *
+ * @mixin \Eloquent
  */
 class OAuthProvider extends Model
 {

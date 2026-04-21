@@ -68,12 +68,13 @@ class BookFileService
     }
 
     /**
-     * Delete the epub file from private S3 bucket.
+     * Delete all book files from private S3 bucket.
+     *
+     * TODO Phase 13.3: iterate $book->files and delete each S3 path.
+     * epub_path column was dropped in Phase 13.1.
      */
     public function deleteEpub(Book $book): void
     {
-        if ($book->epub_path) {
-            Storage::disk('s3-private')->delete($book->epub_path);
-        }
+        // No-op until Phase 13.3 adds deleteBookFiles() with BookFile iteration.
     }
 }

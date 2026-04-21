@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace App\Features\Admin\Services;
 
+use App\Enums\BookFileFormat;
+use App\Enums\BookFileStatus;
 use App\Enums\BookStatus;
+use App\Features\Admin\Jobs\UploadSourceFile;
 use App\Models\Book;
+use App\Models\BookFile;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 use Throwable;
 
@@ -18,7 +23,7 @@ class BookAdminService
 
     /**
      * Create a new book record, upload cover files synchronously, and dispatch
-     * the epub upload job if an epub file is provided.
+     * the source file upload job if a source file is provided.
      *
      * @param  array<string, mixed>  $data  Validated form data (price in shop currency)
      *
@@ -28,9 +33,9 @@ class BookAdminService
         array $data,
         ?UploadedFile $cover,
         ?UploadedFile $coverThumb,
-        ?UploadedFile $epub,
+        ?UploadedFile $sourceFile,
     ): Book {
-        return DB::transaction(function () use ($data, $cover, $coverThumb): Book {
+        return DB::transaction(function () use ($data, $cover, $coverThumb, $sourceFile): Book {
             $book = new Book;
             $book->title = $data['title'];
             $book->slug = $data['slug'];
@@ -57,8 +62,9 @@ class BookAdminService
                 $book->save();
             }
 
-            // TODO Phase 13.3: dispatch UploadSourceFile job here.
-            // epub_path column was dropped in Phase 13.1; ProcessBookFileUpload is no longer usable.
+            if ($sourceFile !== null) {
+                $this->dispatchSourceFileUpload($book, $sourceFile);
+            }
 
             return $book;
         });
@@ -66,7 +72,7 @@ class BookAdminService
 
     /**
      * Update an existing book record, upload cover files synchronously, and
-     * dispatch the epub upload job if a new epub file is provided.
+     * dispatch the source file upload job if a new source file is provided.
      *
      * @param  array<string, mixed>  $data  Validated form data (price in shop currency)
      *
@@ -78,7 +84,7 @@ class BookAdminService
         array $data,
         ?UploadedFile $cover,
         ?UploadedFile $coverThumb,
-        ?UploadedFile $epub,
+        ?UploadedFile $sourceFile,
     ): Book {
         $newStatus = BookStatus::from($data['status']);
 
@@ -88,11 +94,11 @@ class BookAdminService
         }
 
         // Cannot publish a book that has no client-accessible ready file.
-        if ($newStatus === BookStatus::Published && $epub === null && ! $book->hasClientReadyFile()) {
+        if ($newStatus === BookStatus::Published && ! $book->hasClientReadyFile()) {
             throw new InvalidArgumentException('Нельзя опубликовать книгу без готового файла для скачивания.');
         }
 
-        return DB::transaction(function () use ($book, $data, $cover, $coverThumb): Book {
+        return DB::transaction(function () use ($book, $data, $cover, $coverThumb, $sourceFile): Book {
             $book->title = $data['title'];
             $book->slug = $data['slug'];
             $book->status = BookStatus::from($data['status']);
@@ -114,8 +120,9 @@ class BookAdminService
 
             $book->save();
 
-            // TODO Phase 13.3: dispatch UploadSourceFile job here.
-            // epub_path column was dropped in Phase 13.1; ProcessBookFileUpload is no longer usable.
+            if ($sourceFile !== null) {
+                $this->dispatchSourceFileUpload($book, $sourceFile);
+            }
 
             return $book;
         });
@@ -179,10 +186,54 @@ class BookAdminService
      */
     public function deleteBook(Book $book): void
     {
+        $book->load('files');
+
         $this->fileService->deleteCover($book);
-        $this->fileService->deleteEpub($book);
+        $this->fileService->deleteBookFiles($book);
 
         $book->delete();
+    }
+
+    /**
+     * Store the uploaded source file to a local temp directory, create a BookFile
+     * record, and dispatch UploadSourceFile to handle the S3 upload and conversions.
+     */
+    private function dispatchSourceFileUpload(Book $book, UploadedFile $file): void
+    {
+        $ext = strtolower($file->getClientOriginalExtension());
+        $format = BookFileFormat::from($ext);
+
+        $basePath = tempnam(sys_get_temp_dir(), 'bookshop_source_');
+        $tempPath = $basePath.'.'.$ext;
+        $file->move(dirname($tempPath), basename($tempPath));
+        @unlink($basePath);
+
+        $bookFile = BookFile::query()
+            ->where('book_id', $book->id)
+            ->where('format', $format)
+            ->where('is_source', true)
+            ->first();
+
+        if ($bookFile instanceof BookFile) {
+            if ($bookFile->path !== null) {
+                Storage::disk('s3-private')->delete($bookFile->path);
+            }
+
+            $bookFile->update([
+                'status' => BookFileStatus::Pending,
+                'path' => null,
+                'error_message' => null,
+            ]);
+        } else {
+            $bookFile = BookFile::create([
+                'book_id' => $book->id,
+                'format' => $format,
+                'status' => BookFileStatus::Pending,
+                'is_source' => true,
+            ]);
+        }
+
+        UploadSourceFile::dispatch($bookFile->id, $tempPath);
     }
 
     /**

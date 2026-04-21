@@ -12,13 +12,16 @@ use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Throwable;
 
-class BookAdminService
+readonly class BookAdminService
 {
-    public function __construct(private readonly BookFileService $fileService) {}
+    public function __construct(
+        private BookCoverService $coverService,
+        private BookFileService $fileService,
+    ) {}
 
     /**
      * Create a new book record, upload cover files synchronously, and dispatch
-     * the epub upload job if an epub file is provided.
+     * the source file upload job if a source file is provided.
      *
      * @param  array<string, mixed>  $data  Validated form data (price in shop currency)
      *
@@ -28,9 +31,9 @@ class BookAdminService
         array $data,
         ?UploadedFile $cover,
         ?UploadedFile $coverThumb,
-        ?UploadedFile $epub,
+        ?UploadedFile $sourceFile,
     ): Book {
-        return DB::transaction(function () use ($data, $cover, $coverThumb): Book {
+        return DB::transaction(function () use ($data, $cover, $coverThumb, $sourceFile): Book {
             $book = new Book;
             $book->title = $data['title'];
             $book->slug = $data['slug'];
@@ -46,19 +49,20 @@ class BookAdminService
             $book->save();
 
             if ($cover !== null) {
-                $book->cover_path = $this->fileService->uploadCover($book, $cover);
+                $book->cover_path = $this->coverService->uploadCover($book, $cover);
             }
 
             if ($coverThumb !== null) {
-                $book->cover_thumb_path = $this->fileService->uploadCoverThumb($book, $coverThumb);
+                $book->cover_thumb_path = $this->coverService->uploadCoverThumb($book, $coverThumb);
             }
 
             if ($cover !== null || $coverThumb !== null) {
                 $book->save();
             }
 
-            // TODO Phase 13.3: dispatch UploadSourceFile job here.
-            // epub_path column was dropped in Phase 13.1; ProcessBookFileUpload is no longer usable.
+            if ($sourceFile !== null) {
+                $this->fileService->queueSourceUpload($book, $sourceFile);
+            }
 
             return $book;
         });
@@ -66,7 +70,7 @@ class BookAdminService
 
     /**
      * Update an existing book record, upload cover files synchronously, and
-     * dispatch the epub upload job if a new epub file is provided.
+     * dispatch the source file upload job if a new source file is provided.
      *
      * @param  array<string, mixed>  $data  Validated form data (price in shop currency)
      *
@@ -78,7 +82,7 @@ class BookAdminService
         array $data,
         ?UploadedFile $cover,
         ?UploadedFile $coverThumb,
-        ?UploadedFile $epub,
+        ?UploadedFile $sourceFile,
     ): Book {
         $newStatus = BookStatus::from($data['status']);
 
@@ -88,11 +92,11 @@ class BookAdminService
         }
 
         // Cannot publish a book that has no client-accessible ready file.
-        if ($newStatus === BookStatus::Published && $epub === null && ! $book->hasClientReadyFile()) {
+        if ($newStatus === BookStatus::Published && ! $book->hasClientReadyFile()) {
             throw new InvalidArgumentException('Нельзя опубликовать книгу без готового файла для скачивания.');
         }
 
-        return DB::transaction(function () use ($book, $data, $cover, $coverThumb): Book {
+        return DB::transaction(function () use ($book, $data, $cover, $coverThumb, $sourceFile): Book {
             $book->title = $data['title'];
             $book->slug = $data['slug'];
             $book->status = BookStatus::from($data['status']);
@@ -105,17 +109,18 @@ class BookAdminService
             $book->sort_order = (int) ($data['sort_order'] ?? 0);
 
             if ($cover !== null) {
-                $book->cover_path = $this->fileService->uploadCover($book, $cover);
+                $book->cover_path = $this->coverService->uploadCover($book, $cover);
             }
 
             if ($coverThumb !== null) {
-                $book->cover_thumb_path = $this->fileService->uploadCoverThumb($book, $coverThumb);
+                $book->cover_thumb_path = $this->coverService->uploadCoverThumb($book, $coverThumb);
             }
 
             $book->save();
 
-            // TODO Phase 13.3: dispatch UploadSourceFile job here.
-            // epub_path column was dropped in Phase 13.1; ProcessBookFileUpload is no longer usable.
+            if ($sourceFile !== null) {
+                $this->fileService->queueSourceUpload($book, $sourceFile);
+            }
 
             return $book;
         });
@@ -179,8 +184,10 @@ class BookAdminService
      */
     public function deleteBook(Book $book): void
     {
-        $this->fileService->deleteCover($book);
-        $this->fileService->deleteEpub($book);
+        $book->load('files');
+
+        $this->coverService->deleteCover($book);
+        $this->fileService->deleteAll($book);
 
         $book->delete();
     }

@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace Tests\Feature\Admin;
 
 use App\Enums\BookStatus;
+use App\Features\Admin\Jobs\UploadSourceFile;
 use App\Models\Book;
 use App\Models\BookFile;
 use App\Models\User;
 use App\Models\UserBook;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
-use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
 
 class AdminBookControllerTest extends TestCase
@@ -166,14 +167,32 @@ class AdminBookControllerTest extends TestCase
         Storage::disk('s3-public')->assertExists($book->cover_path);
     }
 
-    /**
-     * File upload via source file upload is implemented in Phase 13.3.
-     * This test is a placeholder to document the expected behaviour.
-     */
-    #[Group('phase-13-3')]
-    public function test_source_file_upload_dispatches_upload_source_file_job(): void
+    public function test_source_file_upload_on_create_dispatches_upload_source_file_job(): void
     {
-        $this->markTestSkipped('Requires Phase 13.3: UploadSourceFile job replaces ProcessBookFileUpload.');
+        Bus::fake();
+        Storage::fake('s3-public');
+
+        $admin = User::factory()->admin()->create();
+
+        $sourceFile = UploadedFile::fake()->create('book.epub', 100, 'application/epub+zip');
+
+        $this->actingAs($admin)->post('/admin/books', [
+            'title' => 'Книга с исходным файлом',
+            'slug' => 'book-with-source',
+            'price' => '590',
+            'sort_order' => 0,
+            'source_file' => $sourceFile,
+        ]);
+
+        $book = Book::query()->where('slug', 'book-with-source')->firstOrFail();
+        $this->assertDatabaseHas('book_files', [
+            'book_id' => $book->id,
+            'format' => 'epub',
+            'is_source' => true,
+            'status' => 'pending',
+        ]);
+
+        Bus::assertDispatched(UploadSourceFile::class);
     }
 
     // -------------------------------------------------------------------------

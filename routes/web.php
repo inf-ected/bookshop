@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Features\Admin\Controllers\BookController as AdminBookController;
+use App\Features\Admin\Controllers\BookFileController as AdminBookFileController;
 use App\Features\Admin\Controllers\DashboardController;
 use App\Features\Admin\Controllers\DownloadLogController as AdminDownloadLogController;
 use App\Features\Admin\Controllers\NewsletterController as AdminNewsletterController;
@@ -121,6 +122,12 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::patch('/books/{book}/toggle-status', [AdminBookController::class, 'toggleStatus'])->name('books.toggle-status');
     Route::patch('/books/{book}/toggle-featured', [AdminBookController::class, 'toggleFeatured'])->name('books.toggle-featured');
     Route::patch('/books/{book}/toggle-availability', [AdminBookController::class, 'toggleAvailability'])->name('books.toggle-availability');
+
+    // Book file management — status route defined first to avoid being captured as {bookFile}
+    Route::get('/books/{book}/files/status', [AdminBookFileController::class, 'status'])->name('books.files.status');
+    Route::post('/books/{book}/files', [AdminBookFileController::class, 'store'])->name('books.files.store');
+    Route::get('/books/{book}/files/{bookFile}/download', [AdminBookFileController::class, 'download'])->name('books.files.download');
+    Route::post('/books/{book}/files/{bookFile}/retry', [AdminBookFileController::class, 'retry'])->name('books.files.retry');
 
     Route::get('/posts', [AdminPostController::class, 'index'])->name('posts.index');
     Route::get('/posts/create', [AdminPostController::class, 'create'])->name('posts.create');

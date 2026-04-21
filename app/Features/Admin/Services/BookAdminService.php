@@ -15,8 +15,8 @@ use Throwable;
 readonly class BookAdminService
 {
     public function __construct(
-        private BookFileService       $fileService,
-        private BookFileUploadService $uploadService,
+        private BookCoverService $coverService,
+        private BookFileService $fileService,
     ) {}
 
     /**
@@ -49,11 +49,11 @@ readonly class BookAdminService
             $book->save();
 
             if ($cover !== null) {
-                $book->cover_path = $this->fileService->uploadCover($book, $cover);
+                $book->cover_path = $this->coverService->uploadCover($book, $cover);
             }
 
             if ($coverThumb !== null) {
-                $book->cover_thumb_path = $this->fileService->uploadCoverThumb($book, $coverThumb);
+                $book->cover_thumb_path = $this->coverService->uploadCoverThumb($book, $coverThumb);
             }
 
             if ($cover !== null || $coverThumb !== null) {
@@ -61,7 +61,7 @@ readonly class BookAdminService
             }
 
             if ($sourceFile !== null) {
-                $this->uploadService->queueSourceUpload($book, $sourceFile);
+                $this->fileService->queueSourceUpload($book, $sourceFile);
             }
 
             return $book;
@@ -109,17 +109,17 @@ readonly class BookAdminService
             $book->sort_order = (int) ($data['sort_order'] ?? 0);
 
             if ($cover !== null) {
-                $book->cover_path = $this->fileService->uploadCover($book, $cover);
+                $book->cover_path = $this->coverService->uploadCover($book, $cover);
             }
 
             if ($coverThumb !== null) {
-                $book->cover_thumb_path = $this->fileService->uploadCoverThumb($book, $coverThumb);
+                $book->cover_thumb_path = $this->coverService->uploadCoverThumb($book, $coverThumb);
             }
 
             $book->save();
 
             if ($sourceFile !== null) {
-                $this->uploadService->queueSourceUpload($book, $sourceFile);
+                $this->fileService->queueSourceUpload($book, $sourceFile);
             }
 
             return $book;
@@ -186,8 +186,8 @@ readonly class BookAdminService
     {
         $book->load('files');
 
-        $this->fileService->deleteCover($book);
-        $this->fileService->deleteBookFiles($book);
+        $this->coverService->deleteCover($book);
+        $this->fileService->deleteAll($book);
 
         $book->delete();
     }

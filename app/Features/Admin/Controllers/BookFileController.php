@@ -6,7 +6,7 @@ namespace App\Features\Admin\Controllers;
 
 use App\Enums\BookFileFormat;
 use App\Features\Admin\Requests\UploadBookFileRequest;
-use App\Features\Admin\Services\BookFileUploadService;
+use App\Features\Admin\Services\BookFileService;
 use App\Http\Controllers\Controller;
 use App\Models\Book;
 use App\Models\BookFile;
@@ -16,19 +16,19 @@ use Illuminate\Support\Facades\Storage;
 
 class BookFileController extends Controller
 {
-    public function __construct(private readonly BookFileUploadService $uploadService) {}
+    public function __construct(private readonly BookFileService $fileService) {}
 
     public function store(UploadBookFileRequest $request, Book $book): RedirectResponse
     {
         $formatValue = $request->validated('format');
 
         if ($formatValue !== null) {
-            $this->uploadService->uploadDerived($book, $request->file('file'), BookFileFormat::from($formatValue));
+            $this->fileService->uploadDerived($book, $request->file('file'), BookFileFormat::from($formatValue));
 
             return redirect()->back()->with('success', 'Файл загружен.');
         }
 
-        $this->uploadService->queueSourceUpload($book, $request->file('file'));
+        $this->fileService->queueSourceUpload($book, $request->file('file'));
 
         return redirect()->back()->with('success', 'Исходный файл принят в обработку.');
     }
@@ -50,7 +50,7 @@ class BookFileController extends Controller
     {
         abort_unless($bookFile->book_id === $book->id, 404);
 
-        $this->uploadService->retryConversion($book, $bookFile);
+        $this->fileService->retryConversion($book, $bookFile);
 
         return redirect()->back()->with('success', 'Конвертация запущена повторно.');
     }

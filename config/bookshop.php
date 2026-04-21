@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Enums\BookFileFormat;
+
 return [
 
     /*
@@ -16,5 +18,20 @@ return [
     */
 
     'download_url_ttl' => (int) env('DOWNLOAD_URL_TTL', 300),
+
+    'formats' => [
+        'conversion_matrix' => [
+            BookFileFormat::Docx->value => [BookFileFormat::Epub->value, BookFileFormat::Fb2->value],
+            BookFileFormat::Epub->value => [BookFileFormat::Fb2->value],
+            BookFileFormat::Fb2->value => [BookFileFormat::Epub->value],
+        ],
+
+        'converter_preference' => [
+            BookFileFormat::Docx->value.'_to_'.BookFileFormat::Epub->value => 'pandoc',
+            BookFileFormat::Docx->value.'_to_'.BookFileFormat::Fb2->value => 'calibre',
+            BookFileFormat::Epub->value.'_to_'.BookFileFormat::Fb2->value => 'calibre',
+            BookFileFormat::Fb2->value.'_to_'.BookFileFormat::Epub->value => 'calibre',
+        ],
+    ],
 
 ];

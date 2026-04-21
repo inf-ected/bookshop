@@ -30,7 +30,6 @@ class BookFactory extends Factory
             'currency' => config('shop.currency_code'),
             'cover_path' => null,
             'cover_thumb_path' => null,
-            'epub_path' => null,
             'status' => BookStatus::Draft,
             'is_featured' => false,
             'is_available' => true,
@@ -43,14 +42,6 @@ class BookFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => BookStatus::Published,
-            'epub_path' => 'epubs/'.fake()->uuid().'.epub',
-        ]);
-    }
-
-    public function withEpub(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'epub_path' => 'epubs/'.fake()->uuid().'.epub',
         ]);
     }
 

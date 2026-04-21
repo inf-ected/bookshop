@@ -34,7 +34,7 @@ class CabinetControllerTest extends TestCase
     public function test_library_shows_owned_books(): void
     {
         $user = User::factory()->create();
-        $book = Book::factory()->create(['epub_path' => 'books/1/book.epub']);
+        $book = Book::factory()->create();
         UserBook::factory()->create(['user_id' => $user->id, 'book_id' => $book->id]);
 
         $response = $this->actingAs($user)->get(route('cabinet.library'));

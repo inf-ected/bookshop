@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\BookFileFormat;
+use App\Enums\BookFileStatus;
 use App\Enums\BookStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -25,7 +27,6 @@ use Illuminate\Support\Facades\Storage;
  * @property string $currency
  * @property string|null $cover_path
  * @property string|null $cover_thumb_path
- * @property string|null $epub_path
  * @property BookStatus $status
  * @property bool $is_featured
  * @property bool $is_available
@@ -33,9 +34,39 @@ use Illuminate\Support\Facades\Storage;
  * @property int $sort_order
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read string|null $cover_url
+ * @property-read Collection<int, BookFile> $files
+ * @property-read int|null $files_count
  * @property-read string|null $cover_thumb_url
+ * @property-read string|null $cover_url
  * @property-read Collection<int, UserBook> $userBooks
+ * @property-read int|null $user_books_count
+ *
+ * @method static \Database\Factories\BookFactory factory($count = null, $state = [])
+ * @method static Builder<static>|Book featured()
+ * @method static Builder<static>|Book newModelQuery()
+ * @method static Builder<static>|Book newQuery()
+ * @method static Builder<static>|Book ordered()
+ * @method static Builder<static>|Book published()
+ * @method static Builder<static>|Book query()
+ * @method static Builder<static>|Book whereAnnotation($value)
+ * @method static Builder<static>|Book whereCoverPath($value)
+ * @method static Builder<static>|Book whereCoverThumbPath($value)
+ * @method static Builder<static>|Book whereCreatedAt($value)
+ * @method static Builder<static>|Book whereCurrency($value)
+ * @method static Builder<static>|Book whereExcerpt($value)
+ * @method static Builder<static>|Book whereFragment($value)
+ * @method static Builder<static>|Book whereId($value)
+ * @method static Builder<static>|Book whereIsAdult($value)
+ * @method static Builder<static>|Book whereIsAvailable($value)
+ * @method static Builder<static>|Book whereIsFeatured($value)
+ * @method static Builder<static>|Book wherePrice($value)
+ * @method static Builder<static>|Book whereSlug($value)
+ * @method static Builder<static>|Book whereSortOrder($value)
+ * @method static Builder<static>|Book whereStatus($value)
+ * @method static Builder<static>|Book whereTitle($value)
+ * @method static Builder<static>|Book whereUpdatedAt($value)
+ *
+ * @mixin \Eloquent
  */
 class Book extends Model
 {
@@ -51,7 +82,6 @@ class Book extends Model
         'currency',
         'cover_path',
         'cover_thumb_path',
-        'epub_path',
         'status',
         'is_featured',
         'is_available',
@@ -118,6 +148,24 @@ class Book extends Model
     public function userBooks(): HasMany
     {
         return $this->hasMany(UserBook::class);
+    }
+
+    /** @return HasMany<BookFile, $this> */
+    public function files(): HasMany
+    {
+        return $this->hasMany(BookFile::class);
+    }
+
+    /**
+     * Returns true if the book has at least one client-accessible BookFile
+     * (EPUB or FB2) with status=ready. Used as the publish guard.
+     */
+    public function hasClientReadyFile(): bool
+    {
+        return $this->files()
+            ->where('status', BookFileStatus::Ready)
+            ->whereIn('format', array_map(fn (BookFileFormat $f) => $f->value, BookFileFormat::clientAccessible()))
+            ->exists();
     }
 
     /**

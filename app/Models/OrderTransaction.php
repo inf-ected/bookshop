@@ -14,12 +14,27 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $order_id
  * @property string $provider
- * @property array<string, mixed> $provider_data
+ * @property array<array-key, mixed> $provider_data
  * @property string $status
  * @property Carbon|null $expires_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Order|null $order
+ *
+ * @method static \Database\Factories\OrderTransactionFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderTransaction newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderTransaction newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderTransaction query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderTransaction whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderTransaction whereExpiresAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderTransaction whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderTransaction whereOrderId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderTransaction whereProvider($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderTransaction whereProviderData($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderTransaction whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderTransaction whereUpdatedAt($value)
+ *
+ * @mixin \Eloquent
  */
 class OrderTransaction extends Model
 {

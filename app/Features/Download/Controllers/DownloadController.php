@@ -20,15 +20,17 @@ class DownloadController extends Controller
     {
         Gate::authorize('download', $book);
 
-        if (blank($book->epub_path)) {
+        if (! $book->hasClientReadyFile()) {
             abort(404);
         }
 
         /** @var User $user */
         $user = $request->user();
 
+        $url = $this->downloadService->generateUrl($book);
+
         $this->downloadService->logDownload($user, $book, (string) $request->ip());
 
-        return redirect($this->downloadService->generateUrl($book));
+        return redirect($url);
     }
 }

@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace App\Features\Admin\Services;
 
 use App\Enums\BookStatus;
-use App\Features\Admin\Jobs\ProcessBookFileUpload;
 use App\Models\Book;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 use Throwable;
 
@@ -32,7 +30,7 @@ class BookAdminService
         ?UploadedFile $coverThumb,
         ?UploadedFile $epub,
     ): Book {
-        return DB::transaction(function () use ($data, $cover, $coverThumb, $epub): Book {
+        return DB::transaction(function () use ($data, $cover, $coverThumb): Book {
             $book = new Book;
             $book->title = $data['title'];
             $book->slug = $data['slug'];
@@ -59,17 +57,8 @@ class BookAdminService
                 $book->save();
             }
 
-            if ($epub !== null) {
-                $tempPath = $epub->store('temp', 'local');
-
-                if ($tempPath !== false) {
-                    ProcessBookFileUpload::dispatch(
-                        $book->id,
-                        Storage::disk('local')->path($tempPath),
-                        $epub->getClientOriginalExtension(),
-                    );
-                }
-            }
+            // TODO Phase 13.3: dispatch UploadSourceFile job here.
+            // epub_path column was dropped in Phase 13.1; ProcessBookFileUpload is no longer usable.
 
             return $book;
         });
@@ -98,12 +87,12 @@ class BookAdminService
             throw new InvalidArgumentException('Нельзя снять с публикации книгу, у которой есть покупки.');
         }
 
-        // Cannot publish a book that has no epub file.
-        if ($newStatus === BookStatus::Published && $epub === null && $book->epub_path === null) {
-            throw new InvalidArgumentException('Нельзя опубликовать книгу без файла epub.');
+        // Cannot publish a book that has no client-accessible ready file.
+        if ($newStatus === BookStatus::Published && $epub === null && ! $book->hasClientReadyFile()) {
+            throw new InvalidArgumentException('Нельзя опубликовать книгу без готового файла для скачивания.');
         }
 
-        return DB::transaction(function () use ($book, $data, $cover, $coverThumb, $epub): Book {
+        return DB::transaction(function () use ($book, $data, $cover, $coverThumb): Book {
             $book->title = $data['title'];
             $book->slug = $data['slug'];
             $book->status = BookStatus::from($data['status']);
@@ -125,17 +114,8 @@ class BookAdminService
 
             $book->save();
 
-            if ($epub !== null) {
-                $tempPath = $epub->store('temp', 'local');
-
-                if ($tempPath !== false) {
-                    ProcessBookFileUpload::dispatch(
-                        $book->id,
-                        Storage::disk('local')->path($tempPath),
-                        $epub->getClientOriginalExtension(),
-                    );
-                }
-            }
+            // TODO Phase 13.3: dispatch UploadSourceFile job here.
+            // epub_path column was dropped in Phase 13.1; ProcessBookFileUpload is no longer usable.
 
             return $book;
         });
@@ -157,8 +137,8 @@ class BookAdminService
             }
             $book->status = BookStatus::Draft;
         } else {
-            if ($book->epub_path === null) {
-                throw new InvalidArgumentException('Нельзя опубликовать книгу без файла epub.');
+            if (! $book->hasClientReadyFile()) {
+                throw new InvalidArgumentException('Нельзя опубликовать книгу без готового файла для скачивания.');
             }
             $book->status = BookStatus::Published;
         }

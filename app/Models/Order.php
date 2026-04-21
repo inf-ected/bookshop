@@ -23,11 +23,29 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $paid_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read User $user
  * @property-read Collection<int, OrderItem> $items
- * @property-read Collection<int, UserBook> $userBooks
- * @property-read Collection<int, OrderTransaction> $transactions
+ * @property-read int|null $items_count
  * @property-read OrderTransaction|null $transaction
+ * @property-read Collection<int, OrderTransaction> $transactions
+ * @property-read int|null $transactions_count
+ * @property-read User $user
+ * @property-read Collection<int, UserBook> $userBooks
+ * @property-read int|null $user_books_count
+ *
+ * @method static \Database\Factories\OrderFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereCurrency($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order wherePaidAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereTotalAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereUserId($value)
+ *
+ * @mixin \Eloquent
  */
 class Order extends Model
 {

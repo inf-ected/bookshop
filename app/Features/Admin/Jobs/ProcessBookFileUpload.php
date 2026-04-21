@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 namespace App\Features\Admin\Jobs;
 
-use App\Models\Book;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class ProcessBookFileUpload implements ShouldQueue
 {
@@ -36,35 +33,13 @@ class ProcessBookFileUpload implements ShouldQueue
 
     /**
      * Execute the job.
+     *
+     * @deprecated Replaced by UploadSourceFile in Phase 13.3. Dispatch is disabled in BookAdminService.
      */
     public function handle(): void
     {
-        $book = Book::query()->find($this->bookId);
-
-        if (! $book instanceof Book) {
-            return;
-        }
-
-        if ($book->epub_path) {
-            Storage::disk('s3-private')->delete($book->epub_path);
-        }
-
-        $epubPath = 'epubs/'.Str::uuid().'.epub';
-
-        $content = file_get_contents($this->tempPath);
-
-        if ($content === false) {
-            throw new \RuntimeException("Failed to read temp file: {$this->tempPath}");
-        }
-
-        $stored = Storage::disk('s3-private')->put($epubPath, $content, 'private');
-
-        if ($stored === false) {
-            throw new \RuntimeException("Failed to upload epub to S3: {$epubPath}");
-        }
-
-        $book->update(['epub_path' => $epubPath]);
-
+        // epub_path column was dropped in Phase 13.1.
+        // This job is replaced by UploadSourceFile in Phase 13.3 and must not be dispatched.
         if (file_exists($this->tempPath)) {
             unlink($this->tempPath);
         }

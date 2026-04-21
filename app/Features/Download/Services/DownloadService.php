@@ -7,23 +7,14 @@ namespace App\Features\Download\Services;
 use App\Models\Book;
 use App\Models\DownloadLog;
 use App\Models\User;
-use Illuminate\Support\Facades\Storage;
 
 class DownloadService
 {
     public function generateUrl(Book $book): string
     {
-        // Use the presign disk so the URL is signed with the public-facing endpoint.
-        // In local dev S3_TEMPORARY_URL_BASE=http://localhost:9000 overrides the
-        // internal Docker endpoint (minio:9000), making the link resolvable by browsers.
-        //
-        // ResponseContentDisposition instructs S3/MinIO to send the file with a
-        // human-readable filename (slug + extension) instead of the raw S3 key (UUID path).
-        return Storage::disk('s3-private-presign')->temporaryUrl(
-            $book->epub_path,
-            now()->addSeconds(config('bookshop.download_url_ttl', 300)),
-            ['ResponseContentDisposition' => 'attachment; filename="'.$book->slug.'.epub"'],
-        );
+        // TODO Phase 13.4: replace with BookFile-based URL generation.
+        // epub_path column was dropped in Phase 13.1.
+        throw new \LogicException('DownloadService::generateUrl() requires Phase 13.4 BookFile-based implementation.');
     }
 
     public function logDownload(User $user, Book $book, string $ipAddress): void
@@ -32,6 +23,7 @@ class DownloadService
             'user_id' => $user->id,
             'book_id' => $book->id,
             'ip_address' => $ipAddress,
+            'format' => 'epub', // TODO Phase 13.4: pass actual BookFileFormat
             'downloaded_at' => now(),
         ]);
     }

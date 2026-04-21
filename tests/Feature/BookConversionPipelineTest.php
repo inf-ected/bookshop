@@ -494,12 +494,79 @@ class BookConversionPipelineTest extends TestCase
     #[Group('conversion-integration')]
     public function test_pandoc_convert_integration(): void
     {
-        $this->markTestSkipped('Requires Pandoc installed');
+        if (! $this->binaryAvailable('pandoc')) {
+            $this->markTestSkipped('Requires Pandoc installed');
+        }
+
+        $tmpDir = sys_get_temp_dir();
+        $input = $tmpDir.'/bookshop_test_'.uniqid().'.docx';
+        $output = $tmpDir.'/bookshop_test_'.uniqid().'.epub';
+
+        // Produce a real DOCX from markdown using pandoc directly, then convert it via PandocConverter.
+        $md = $tmpDir.'/bookshop_test_'.uniqid().'.md';
+        file_put_contents($md, "# Test\n\nHello world.");
+        exec("pandoc -f markdown {$md} -o {$input}", result_code: $code);
+        @unlink($md);
+
+        if ($code !== 0 || ! file_exists($input)) {
+            $this->markTestSkipped('Could not generate test DOCX via pandoc');
+        }
+
+        try {
+            $converter = new PandocConverter;
+            $converter->convert($input, $output, BookFileFormat::Docx, BookFileFormat::Epub);
+            $this->assertFileExists($output);
+            $this->assertGreaterThan(0, filesize($output));
+        } finally {
+            @unlink($input);
+            @unlink($output);
+        }
     }
 
     #[Group('conversion-integration')]
     public function test_calibre_convert_integration(): void
     {
-        $this->markTestSkipped('Requires Calibre installed');
+        if (! $this->binaryAvailable('ebook-convert')) {
+            $this->markTestSkipped('Requires Calibre installed');
+        }
+
+        if (! $this->binaryAvailable('pandoc')) {
+            $this->markTestSkipped('Calibre integration test requires Pandoc to produce source EPUB');
+        }
+
+        $tmpDir = sys_get_temp_dir();
+        $docx = $tmpDir.'/bookshop_test_'.uniqid().'.docx';
+        $epub = $tmpDir.'/bookshop_test_'.uniqid().'.epub';
+        $fb2 = $tmpDir.'/bookshop_test_'.uniqid().'.fb2';
+
+        // Produce DOCX → EPUB via pandoc, then EPUB → FB2 via Calibre.
+        $md = $tmpDir.'/bookshop_test_'.uniqid().'.md';
+        file_put_contents($md, "# Test\n\nHello world.");
+        exec("pandoc -f markdown {$md} -o {$docx}", result_code: $code);
+        @unlink($md);
+
+        if ($code !== 0 || ! file_exists($docx)) {
+            $this->markTestSkipped('Could not generate test DOCX via pandoc');
+        }
+
+        try {
+            (new PandocConverter)->convert($docx, $epub, BookFileFormat::Docx, BookFileFormat::Epub);
+
+            $converter = new CalibreConverter;
+            $converter->convert($epub, $fb2, BookFileFormat::Epub, BookFileFormat::Fb2);
+            $this->assertFileExists($fb2);
+            $this->assertGreaterThan(0, filesize($fb2));
+        } finally {
+            @unlink($docx);
+            @unlink($epub);
+            @unlink($fb2);
+        }
+    }
+
+    private function binaryAvailable(string $binary): bool
+    {
+        exec("which {$binary} 2>/dev/null", $out, $code);
+
+        return $code === 0;
     }
 }

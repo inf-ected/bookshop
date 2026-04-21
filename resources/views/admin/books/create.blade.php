@@ -264,14 +264,14 @@
 
                 {{-- Source file --}}
                 <div>
-                    <label for="file" class="block text-sm font-medium text-text-primary mb-1.5">
+                    <label for="source_file" class="block text-sm font-medium text-text-primary mb-1.5">
                         Исходный файл
                         <span class="text-xs font-normal text-text-subtle ml-1">(.docx, .epub, .fb2 — до 100 МБ)</span>
                     </label>
                     <input
-                        id="file"
+                        id="source_file"
                         type="file"
-                        name="file"
+                        name="source_file"
                         accept=".docx,.epub,.fb2"
                         class="w-full text-sm text-text-muted
                             file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border file:border-border-subtle
@@ -280,7 +280,7 @@
                             file:transition file:cursor-pointer cursor-pointer"
                     >
                     <p class="mt-1 text-xs text-text-subtle">Исходник будет конвертирован в нужные форматы автоматически после создания книги.</p>
-                    @error('file')
+                    @error('source_file')
                         <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>

@@ -36,14 +36,34 @@ class BookFileService
     /**
      * Move the uploaded source file to a temp path and dispatch UploadSourceFile.
      * Used by both BookFileController and BookAdminService (Rule 4).
+     *
+     * Rule 8: re-uploading source resets all derived files. We delete all existing
+     * BookFile records (S3 + DB) before creating the new source to avoid a unique
+     * (book_id, format) conflict when the new source format matches an existing
+     * derived format (e.g. switching from docx to fb2).
      */
     public function queueSourceUpload(Book $book, UploadedFile $file): void
     {
         $ext = strtolower($file->getClientOriginalExtension());
         $format = BookFileFormat::from($ext);
-
         $tempPath = $this->moveToTemp($file);
-        $bookFile = $this->upsertSourceBookFile($book, $format);
+
+        $book->load('files');
+        $book->files->each(function (BookFile $bookFile): void {
+            if ($bookFile->path !== null) {
+                Storage::disk('s3-private')->delete($bookFile->path);
+            }
+            $bookFile->delete();
+        });
+
+        $bookFile = BookFile::create([
+            'book_id' => $book->id,
+            'format' => $format,
+            'is_source' => true,
+            'status' => BookFileStatus::Pending,
+            'path' => null,
+            'error_message' => null,
+        ]);
 
         UploadSourceFile::dispatch($bookFile->id, $tempPath)->afterCommit();
     }
@@ -107,15 +127,6 @@ class BookFileService
         }
 
         return $s3Path;
-    }
-
-    private function upsertSourceBookFile(Book $book, BookFileFormat $format): BookFile
-    {
-        return $this->upsertBookFile($book, $format, isSource: true, attributes: [
-            'status' => BookFileStatus::Pending,
-            'path' => null,
-            'error_message' => null,
-        ]);
     }
 
     /**

@@ -79,7 +79,7 @@ class BookFileControllerTest extends TestCase
         Bus::assertDispatched(UploadSourceFile::class);
     }
 
-    public function test_source_upload_updates_existing_source_file_record(): void
+    public function test_source_upload_replaces_existing_source_and_derived_records(): void
     {
         Bus::fake();
         Storage::fake('s3-private');
@@ -87,11 +87,17 @@ class BookFileControllerTest extends TestCase
         $admin = User::factory()->admin()->create();
         $book = Book::factory()->create();
 
-        $existingSource = BookFile::factory()->epub()->source()->create([
+        // Existing source + a derived file — both must be deleted on re-upload.
+        $oldSource = BookFile::factory()->epub()->source()->create([
             'book_id' => $book->id,
-            'path' => 'books/'.$book->id.'/old.epub',
+            'path' => 'books/'.$book->id.'/source.epub',
         ]);
-        Storage::disk('s3-private')->put('books/'.$book->id.'/old.epub', 'old content');
+        $oldDerived = BookFile::factory()->fb2()->create([
+            'book_id' => $book->id,
+            'path' => 'books/'.$book->id.'/derived.fb2',
+        ]);
+        Storage::disk('s3-private')->put('books/'.$book->id.'/source.epub', 'old source');
+        Storage::disk('s3-private')->put('books/'.$book->id.'/derived.fb2', 'old derived');
 
         $file = UploadedFile::fake()->create('book.epub', 100, 'application/epub+zip');
 
@@ -100,10 +106,48 @@ class BookFileControllerTest extends TestCase
             ['file' => $file],
         );
 
-        $existingSource->refresh();
-        $this->assertEquals(BookFileStatus::Pending, $existingSource->status);
-        $this->assertNull($existingSource->path);
-        Bus::assertDispatched(UploadSourceFile::class, fn ($job) => $job->bookFileId === $existingSource->id);
+        // Old records deleted, new source record created.
+        $this->assertDatabaseMissing('book_files', ['id' => $oldSource->id]);
+        $this->assertDatabaseMissing('book_files', ['id' => $oldDerived->id]);
+
+        $newSource = BookFile::query()
+            ->where('book_id', $book->id)
+            ->where('is_source', true)
+            ->firstOrFail();
+
+        $this->assertEquals(BookFileStatus::Pending, $newSource->status);
+        $this->assertNull($newSource->path);
+        Bus::assertDispatched(UploadSourceFile::class, fn ($job) => $job->bookFileId === $newSource->id);
+    }
+
+    public function test_source_upload_allows_format_change_from_docx_to_fb2(): void
+    {
+        Bus::fake();
+        Storage::fake('s3-private');
+
+        $admin = User::factory()->admin()->create();
+        $book = Book::factory()->create();
+
+        // Existing source is docx; derived fb2 exists — would cause unique constraint
+        // violation if we tried to INSERT a new source fb2 without clearing first.
+        BookFile::factory()->docx()->source()->create(['book_id' => $book->id]);
+        BookFile::factory()->fb2()->create(['book_id' => $book->id]);
+
+        $file = UploadedFile::fake()->create('book.fb2', 100, 'text/xml');
+
+        $response = $this->actingAs($admin)->post(
+            route('admin.books.files.store', $book),
+            ['file' => $file],
+        );
+
+        $response->assertRedirect();
+        $this->assertDatabaseCount('book_files', 1);
+        $this->assertDatabaseHas('book_files', [
+            'book_id' => $book->id,
+            'format' => 'fb2',
+            'is_source' => true,
+            'status' => BookFileStatus::Pending->value,
+        ]);
     }
 
     // -------------------------------------------------------------------------

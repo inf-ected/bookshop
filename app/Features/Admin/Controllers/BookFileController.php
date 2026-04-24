@@ -41,6 +41,7 @@ class BookFileController extends Controller
         $url = Storage::disk('s3-private-presign')->temporaryUrl(
             $file->path,
             now()->addMinutes(5),
+            ['ResponseContentDisposition' => 'attachment; filename="'.$file->clientFilename().'"'],
         );
 
         return redirect($url);

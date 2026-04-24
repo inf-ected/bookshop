@@ -63,19 +63,28 @@
                             </h3>
                         </a>
 
-                        {{-- Download button --}}
-                        <div class="mt-auto pt-3">
-                            <a
-                                href="{{ route('books.download', $userBook->book) }}"
-                                class="flex items-center justify-center gap-1.5 w-full px-3 py-2 bg-brand-700 text-white font-sans text-xs rounded hover:bg-brand-800 transition"
-                                onclick="if(typeof gtag !== 'undefined') gtag('event', 'file_download', { file_name: {{ Js::from($userBook->book->title) }}, item_id: '{{ $userBook->book->id }}' })"
-                            >
-                                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                                </svg>
-                                Скачать
-                            </a>
+                        {{-- Download buttons — one per ready client-accessible format --}}
+                        @php
+                            $readyFiles = $userBook->book->files
+                                ->filter(fn($f) => $f->isReady() && $f->isClientAccessible())
+                                ->values();
+                        @endphp
+                        <div class="mt-auto pt-3 flex flex-col gap-1.5">
+                            @forelse($readyFiles as $bookFile)
+                                <a
+                                    href="{{ route('books.download', [$userBook->book, 'format' => $bookFile->format->value]) }}"
+                                    class="flex items-center justify-center gap-1.5 w-full px-3 py-2 bg-brand-700 text-white font-sans text-xs rounded hover:bg-brand-800 transition"
+                                    onclick="if(typeof gtag !== 'undefined') gtag('event', 'file_download', { file_name: {{ Js::from($userBook->book->title) }}, item_id: '{{ $userBook->book->id }}', format: '{{ $bookFile->format->value }}' })"
+                                >
+                                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                    </svg>
+                                    {{ $readyFiles->count() > 1 ? $bookFile->format->label() : 'Скачать' }}
+                                </a>
+                            @empty
+                                <span class="text-xs text-text-muted text-center py-2">Файл готовится...</span>
+                            @endforelse
                         </div>
                     </div>
 

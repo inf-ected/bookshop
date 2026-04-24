@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Book;
+use App\Models\BookFile;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\UserBook;
@@ -44,6 +45,31 @@ class CabinetControllerTest extends TestCase
 
         $userBooks = $response->viewData('userBooks');
         $this->assertTrue($userBooks->contains('book_id', $book->id));
+    }
+
+    public function test_library_shows_download_button_for_ready_epub(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+        UserBook::factory()->create(['user_id' => $user->id, 'book_id' => $book->id]);
+        BookFile::factory()->epub()->ready()->create(['book_id' => $book->id]);
+
+        $response = $this->actingAs($user)->get(route('cabinet.library'));
+
+        $response->assertOk();
+        $response->assertSee(route('books.download', [$book, 'format' => 'epub']), false);
+    }
+
+    public function test_library_shows_preparing_message_when_no_ready_files(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+        UserBook::factory()->create(['user_id' => $user->id, 'book_id' => $book->id]);
+
+        $response = $this->actingAs($user)->get(route('cabinet.library'));
+
+        $response->assertOk();
+        $response->assertSee('Файл готовится');
     }
 
     public function test_library_shows_empty_when_no_books_owned(): void

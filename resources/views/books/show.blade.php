@@ -83,12 +83,27 @@
                 @auth
                     @unless(auth()->user()->isAdmin())
                         @if($isOwned)
-                            <a
-                                href="{{ url('/cabinet/library') }}"
-                                class="px-6 py-2.5 border border-success-border text-success bg-success-light rounded font-sans text-sm font-semibold"
-                            >
-                                В библиотеке
-                            </a>
+                            @if($readyClientFiles->isNotEmpty())
+                                @foreach($readyClientFiles as $bookFile)
+                                    <a
+                                        href="{{ route('books.download', [$book, 'format' => $bookFile->format->value]) }}"
+                                        class="px-5 py-2.5 bg-brand-700 text-white rounded font-sans text-sm font-semibold hover:bg-brand-800 transition flex items-center gap-1.5"
+                                        onclick="if(typeof gtag !== 'undefined') gtag('event', 'file_download', { file_name: {{ Js::from($book->title) }}, item_id: '{{ $book->id }}', format: '{{ $bookFile->format->value }}' })"
+                                    >
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                        </svg>
+                                        {{ $bookFile->format->label() }}
+                                    </a>
+                                @endforeach
+                            @else
+                                <a
+                                    href="{{ route('cabinet.library') }}"
+                                    class="px-6 py-2.5 border border-success-border text-success bg-success-light rounded font-sans text-sm font-semibold"
+                                >
+                                    В библиотеке
+                                </a>
+                            @endif
                         @else
                             <form method="POST" action="{{ route('cart.store', $book) }}">
                                 @csrf

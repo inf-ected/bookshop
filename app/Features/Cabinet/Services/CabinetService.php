@@ -18,7 +18,7 @@ class CabinetService
     public function getUserBooks(User $user): Collection
     {
         return $user->userBooks()
-            ->with('book')
+            ->with('book.files')
             ->whereNull('revoked_at')
             ->latest()
             ->get();

@@ -37,9 +37,7 @@ class BookController extends Controller
         }
 
         $user = $request->user();
-        $isOwned = $user
-            ? $this->catalogService->isOwnedByUser($book, $user)
-            : false;
+        $isOwned = $user && $this->catalogService->isOwnedByUser($book, $user);
 
         $readyClientFiles = collect();
         if ($isOwned) {

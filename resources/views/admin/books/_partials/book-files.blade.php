@@ -70,7 +70,35 @@
     <h2 class="text-xs font-sans font-semibold text-text-muted uppercase tracking-widest">Файлы книги</h2>
 
     <template x-if="files.length === 0">
-        <p class="text-sm text-text-muted">Файлы ещё не загружены.</p>
+        <div class="space-y-3">
+            <p class="text-sm text-text-muted">Файлы ещё не загружены.</p>
+            <form
+                action="{{ route('admin.books.files.store', $book) }}"
+                method="POST"
+                enctype="multipart/form-data"
+                class="flex items-center gap-2"
+                @submit="setTimeout(() => { startPolling(); }, 200)"
+            >
+                @csrf
+                <input
+                    type="file"
+                    name="file"
+                    accept=".docx,.epub,.fb2"
+                    class="text-xs text-text-muted w-44
+                        file:mr-2 file:py-1 file:px-2 file:rounded file:border file:border-border-subtle
+                        file:text-xs file:font-medium file:text-text-primary file:bg-surface-muted
+                        hover:file:bg-brand-50 hover:file:text-brand-700
+                        file:transition file:cursor-pointer cursor-pointer"
+                    required
+                >
+                <button
+                    type="submit"
+                    class="px-3 py-1 text-xs font-medium text-white bg-brand-600 rounded-lg hover:bg-brand-700 transition"
+                >
+                    Загрузить исходник
+                </button>
+            </form>
+        </div>
     </template>
 
     <template x-if="files.length > 0">

@@ -1,6 +1,6 @@
 # Digital Bookshop
 
-A production-ready e-commerce platform for selling digital books (ePub), built with Laravel 12 and PHP 8.4. Designed as a reusable storefront template — everything is configurable for any single-author or small-publisher book shop.
+A production-ready e-commerce platform for selling digital books (EPUB, FB2), built with Laravel 12 and PHP 8.4. Designed as a reusable storefront template — everything is configurable for any single-author or small-publisher book shop.
 
 ---
 
@@ -22,7 +22,7 @@ A production-ready e-commerce platform for selling digital books (ePub), built w
 | Containerisation | Docker (nginx + PHP-FPM + MySQL + Redis + MinIO) |
 | Static Analysis | PHPStan level 5 + Larastan + banned-code extension |
 | Code Style | Laravel Pint |
-| Tests | PHPUnit 11 — 291 tests, 642 assertions |
+| Tests | PHPUnit 11 — 398 tests, 834 assertions |
 
 ---
 
@@ -52,10 +52,13 @@ A production-ready e-commerce platform for selling digital books (ePub), built w
 - Payment provider abstracted behind `PaymentProvider` and `SupportsWebhooks` contracts — adding a second provider (e.g. PayPal) requires a new class, no changes to controllers
 
 ### Digital Delivery
-- ePub files stored on a private S3 bucket
-- Downloads served via pre-signed S3 URLs with configurable TTL
+- EPUB and FB2 files stored on a private S3 bucket; DOCX never served to end users
+- Author uploads a source file (DOCX, EPUB, or FB2) — server automatically converts to all derived formats via background jobs
+- Conversion pipeline: Pandoc for DOCX→EPUB (best prose quality), Calibre for all other pairs (DOCX→FB2, EPUB→FB2, FB2→EPUB)
+- Per-format download buttons in library and book pages — readers choose their preferred format
+- Downloads served via pre-signed S3 URLs with `Content-Disposition: attachment` (forces download, no browser rendering)
 - `BookPolicy` enforces ownership before generating a URL
-- Download events logged to `download_logs` with IP and User-Agent
+- Download events logged to `download_logs` with IP, User-Agent, and format
 
 ### User Cabinet
 - Personal library showing owned books (revoked books excluded)
@@ -75,6 +78,7 @@ A production-ready e-commerce platform for selling digital books (ePub), built w
 
 ### Admin Panel
 - Book management: create, edit, delete, toggle published / draft / available / featured
+- **Book file management**: upload source file (DOCX/EPUB/FB2) → conversion pipeline auto-starts; per-format status badges with Alpine.js live polling; retry failed conversions; replace/re-upload individual formats; download any format including DOCX for review
 - Order list and detail view; refund link to Stripe Dashboard
 - User management: view, ban/unban, verify email, force password reset
 - Book access management: manually grant a book, revoke access, restore revoked access
@@ -104,14 +108,18 @@ All application code is organised into feature slices under `app/Features/`. Eac
 
 ```
 app/Features/
-├── Admin/       — book/order/user management
+├── Admin/       — book/order/user management, file conversion pipeline
+│   ├── Contracts/   — FormatConverter interface
+│   ├── Converters/  — PandocConverter, CalibreConverter
+│   ├── Jobs/        — UploadSourceFile, ConvertBookFormat
+│   └── Services/    — BookConversionService, BookFileService
 ├── Auth/        — login, registration, OAuth, password
 ├── Blog/        — posts
 ├── Cabinet/     — user profile, library, orders
 ├── Cart/        — guest and authenticated cart
 ├── Catalog/     — public storefront pages
 ├── Checkout/    — orders, Stripe, webhooks, confirmation
-├── Download/    — ePub delivery via S3 pre-signed URLs
+├── Download/    — multiformat delivery via S3 pre-signed URLs
 ├── Newsletter/  — subscription and broadcast
 └── Pages/       — static pages, sitemap, robots
 ```
@@ -150,7 +158,9 @@ interface PaymentProvider {
 | Webhook is source of truth for payment | The success redirect is unreliable — users can close the tab; webhooks fire regardless |
 | `order_transactions` table separate from `orders` | Supports multiple payment attempts per order and multiple providers without schema changes |
 | `ProcessPaymentConfirmation` job with `lockForUpdate` | Concurrent Stripe retries cannot both process the same order |
-| Private S3 bucket for ePubs + pre-signed URLs | Files are never publicly accessible; URL expiry limits link sharing |
+| Private S3 bucket for book files + pre-signed URLs | Files are never publicly accessible; URL expiry + `Content-Disposition: attachment` prevents inline rendering |
+| Fixed S3 key per book per format (`source.ext`, `derived.ext`) | Re-uploading overwrites the old object in-place — no orphaned S3 objects accumulate |
+| DOCX triple gate (enum + controller + service) | DOCX never reachable by end users regardless of which code path is hit |
 | HTMLPurifier for blog body | Server-side sanitisation prevents stored XSS even if the admin panel is compromised |
 | Feature-slice architecture | Each domain is independently navigable; no cross-feature service imports |
 
@@ -221,4 +231,4 @@ php artisan test
 # Tests: 291 passed (642 assertions)
 ```
 
-Coverage includes: auth flows, OAuth, cart logic (guest/user/merge/revoke), checkout controller, Stripe webhook handling, payment confirmation job (idempotency, revoke/re-purchase restoration), admin panel (books, orders, users, grants), download policy, blog, cabinet, sitemap, CSP headers, rate limiting, age verification, backups.
+Coverage includes: auth flows, OAuth, cart logic (guest/user/merge/revoke), checkout controller, Stripe webhook handling, payment confirmation job (idempotency, revoke/re-purchase restoration), admin panel (books, orders, users, grants, file upload/conversion/retry/download), multiformat download policy (DOCX triple gate, per-format presigned URLs, rate limiting), library per-format buttons, blog, cabinet, sitemap, CSP headers, age verification, backups.

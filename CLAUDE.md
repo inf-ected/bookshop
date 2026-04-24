@@ -55,7 +55,7 @@ composer analyse   # Run PHPStan static analysis
 - **Nginx**: serves on 8080/8443, proxies to `bookshop_php` container. Config at `docker/nginx/default.conf`.
 - **Database**: MySQL 8 with credentials from `.env` (`MYSQL_DATABASE`, `MYSQL_ROOT_PASSWORD`, `MYSQL_EXPOSE_PORT`).
 - **Redis**: used for cache/session/queue.
-- **MinIO**: S3-compatible local storage. Two buckets: `bookshop-public` (covers) and `bookshop-private` (epubs). Disks: `s3-public`, `s3-private` in `config/filesystems.php`.
+- **MinIO**: S3-compatible local storage. Two buckets: `bookshop-public` (covers) and `bookshop-private` (book files: epub, fb2, docx). Disks: `s3-public`, `s3-private`, `s3-private-presign` in `config/filesystems.php`. `s3-private-presign` overrides the endpoint to `S3_TEMPORARY_URL_BASE` for presigned URL generation (needed for local MinIO).
 - **Queue worker** (`bookshop_queue`, dev only): runs `php artisan queue:work` in a separate container. Defined in `docker-compose.dev.yml`.
 - **Stripe CLI** (`bookshop_stripe`, dev only): forwards Stripe webhook events to `http://nginx/webhooks/stripe`. Defined in `docker-compose.dev.yml`.
 - **Static analysis**: `composer analyse` (PHPStan level 5 via `phpstan.neon`, includes Larastan + banned-code extension).
@@ -74,7 +74,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml exec php php art
 
 Full step-by-step plan: **`docs/deployment-plan.md`**
 
-**Project status**: All phases (1–12) complete. New work comes from `docs/backlog.md`.
+**Project status**: All phases (1–13) complete. New work comes from `docs/backlog.md`.
 
 ## Testing
 

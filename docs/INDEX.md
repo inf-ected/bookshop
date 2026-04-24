@@ -20,9 +20,9 @@
 | 10 | Analytics (GA4) | ✅ merged PR #30 |
 | 11 | Admin Panel — Blog & Storefront | ✅ merged PR #31 |
 | 12 | Hardening & Monitoring | ✅ merged PRs #34–39 |
-| **13** | **Deployment** | **→ [deployment-plan.md](deployment-plan.md)** |
+| 13 | Multiformat Books (EPUB + FB2 + DOCX conversion) | ✅ merged PR #60 |
 
-> Blueprint (phases 1–12) завершён. Агент-воркфлоу (architect → backend → frontend → reviewer) больше не нужен для плановых фаз. Новые задачи — через backlog.md.
+> Blueprint (phases 1–13) завершён. Агент-воркфлоу (architect → backend → frontend → reviewer) больше не нужен для плановых фаз. Новые задачи — через backlog.md.
 
 ---
 
@@ -59,12 +59,13 @@
 ```
 Phase 2:  books
 Phase 3:  users (modify), oauth_providers
-Phase 5:  cart_items, orders, order_items, user_books
+Phase 5:  cart_items, orders, order_items, order_transactions, user_books
 Phase 6:  download_logs
 Phase 8:  posts
 Phase 10: analytics_events
 Phase 11: static_pages, newsletter_subscribers
 Phase 12: indexes on orders, download_logs, analytics_events
+Phase 13: book_files; drop epub_path from books; add format to download_logs
 ```
 
 ---

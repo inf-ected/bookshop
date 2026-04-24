@@ -29,7 +29,7 @@ Every phase must leave the application in a deployable state.
 | Scale | 3–5 books max | Author does not plan more |
 | Frontend | Blade + Alpine.js + Tailwind | Mobile-first, minimalist |
 | S3 | AWS prod / MinIO (Docker) dev | S3-compatible, best local dev tooling |
-| File format | epub only | Single format for now |
+| File format | EPUB + FB2; DOCX accepted as source only | Phase 13: multiformat pipeline with Pandoc + Calibre; DOCX never served to end users |
 | Cart model | Cart + CartItem (multi-book checkout) | Not single-click per book |
 | Free books | None — not planned | No bypass flow needed |
 | File delivery | Controller-proxied signed URL: `GET /books/{book}/download` | Not direct S3 URL |
@@ -59,6 +59,7 @@ Every phase must leave the application in a deployable state.
 | 10 | Analytics & Event Tracking | Beta |
 | 11 | Admin Panel — Blog & Storefront | Production-ready |
 | 12 | Hardening & Monitoring | Production-ready |
+| 13 | Multiformat Books (EPUB + FB2 + DOCX conversion) | Production-ready |
 
 ---
 
@@ -491,6 +492,51 @@ draft → published → (can unpublish back to draft if no purchases)
 
 ---
 
+## Phase 13 — Multiformat Books (EPUB + FB2 + DOCX conversion)
+
+**Goal**: Support multiple ebook formats. Author uploads a source file (DOCX, EPUB, or FB2); the server automatically generates all derived formats. Readers download in their preferred format.
+
+### Features
+
+**Data layer**
+- `book_files` table: `book_id`, `format` (docx/epub/fb2), `is_source`, `path`, `status` (pending/processing/ready/failed), `error_message`
+- Unique constraint on `(book_id, format)` — one record per format per book
+- `epub_path` column dropped from `books` table
+- `format` column added to `download_logs`
+
+**Conversion pipeline**
+- `UploadSourceFile` job: streams source file from local temp storage to S3, then dispatches conversions
+- `ConvertBookFormat` job: downloads source from S3, runs converter, uploads result, updates status
+- `PandocConverter`: DOCX → EPUB (best prose quality)
+- `CalibreConverter`: DOCX → FB2, EPUB → FB2, FB2 → EPUB
+- Configurable converter preference via `config/bookshop.php` (`formats.converter_preference`)
+- Re-uploading source resets and replaces all derived files (Rule 8)
+
+**Admin UI**
+- Book file management block on edit page — outside main form to prevent nested-form issues
+- Per-file rows: format label, status badge (Alpine.js live polling every 3s), download / retry / replace actions
+- Upload button shown when no files exist yet
+- Admin can download any format including DOCX for review (no client-side restriction)
+
+**Client download**
+- `/books/{book}/download?format=epub|fb2` — per-format endpoint
+- `BookPolicy` enforces ownership; DOCX blocked at enum + controller + service (triple gate)
+- Pre-signed S3 URL with `Content-Disposition: attachment` (prevents browser rendering)
+- Rate limited: 10 downloads per user per minute
+- Library and book show pages display per-format download buttons
+
+### Key Technical Decisions
+- Fixed S3 key per book (`books/{id}/source.{ext}`, `books/{id}/derived.{ext}`) — re-uploading overwrites in-place, no orphaned objects
+- Cross-container file access uses `Storage::disk('local')` (shared Docker volume), not `/tmp`
+- `s3-private-presign` disk overrides endpoint to `S3_TEMPORARY_URL_BASE` for MinIO presigned URL generation in local dev
+- DOCX is always a source-only format — `BookFileFormat::isClientAccessible()` returns `false` for DOCX
+
+### Git
+- **Branch**: `feat/multiformat-books` (integration branch, 6 sub-branches merged via PRs #54–59)
+- **Merged**: PR #60
+
+---
+
 ## Milestones
 
 ### MVP — Phases 1–5
@@ -544,6 +590,7 @@ Author controls all content. Application is hardened, monitored, backed up.
 | 10 | `feature/analytics` | `feat: add analytics event tracking and admin analytics dashboard` |
 | 11 | `feature/admin-content` | `feat: add blog admin, storefront controls and static page editor` |
 | 12 | `feature/hardening` | `chore: security headers, caching, queue monitoring, backups and load testing` |
+| 13 | `feat/multiformat-books` | `feat: multiformat book files — EPUB + FB2 with DOCX conversion pipeline` |
 
 All branches merge to `master` via PR. No long-lived feature branches.
 

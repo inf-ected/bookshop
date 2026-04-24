@@ -79,7 +79,7 @@ A minimalist digital bookshop for a single Russian-language author. The author s
 | `/cabinet/library` | My books |
 | `/cabinet/orders` | Order history |
 | `/cabinet/settings` | Profile, connected OAuth providers |
-| `/books/{book}/download` | epub download (proxied signed URL) |
+| `/books/{book}/download?format=epub\|fb2` | Multiformat download (proxied pre-signed S3 URL) |
 
 ### Admin (role = admin)
 
@@ -88,7 +88,11 @@ A minimalist digital bookshop for a single Russian-language author. The author s
 | `/admin` | Dashboard: stats widget |
 | `/admin/books` | Book list |
 | `/admin/books/create` | Create book |
-| `/admin/books/{id}/edit` | Edit book |
+| `/admin/books/{book:slug}/edit` | Edit book |
+| `/admin/books/{book:slug}/files` | Upload source / derived file (POST) |
+| `/admin/books/{book:slug}/files/{file}/download` | Download any format including DOCX (admin only) |
+| `/admin/books/{book:slug}/files/{file}/retry` | Retry failed conversion (POST) |
+| `/admin/books/{book:slug}/files/status` | Poll conversion statuses (JSON) |
 | `/admin/posts` | Blog post list |
 | `/admin/posts/create` | Create post |
 | `/admin/posts/{id}/edit` | Edit post |

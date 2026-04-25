@@ -17,7 +17,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class Phase51DataLayerTest extends TestCase
+class OrderDataLayerTest extends TestCase
 {
     use RefreshDatabase;
 

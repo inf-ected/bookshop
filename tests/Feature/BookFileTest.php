@@ -11,7 +11,7 @@ use App\Models\BookFile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class Phase131DataLayerTest extends TestCase
+class BookFileTest extends TestCase
 {
     use RefreshDatabase;
 

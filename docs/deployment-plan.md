@@ -1,4 +1,6 @@
-# Deployment Plan — Жасмин Майер Bookshop
+# Deployment Plan — Example
+
+> **Примечание:** Этот план был написан для развёртывания Жасмин Майер Bookshop и выполнен в приватном репо. Оставлен здесь как пример/шаблон для будущих форков.
 
 **Target**: Single VPS, Docker, Cloudflare, Hetzner Object Storage, Resend, Stripe (Moldova), GA4
 **Last updated**: 2026-04-15

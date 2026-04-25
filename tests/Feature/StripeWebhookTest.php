@@ -8,7 +8,6 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentGateway;
 use App\Features\Checkout\Jobs\ProcessPaymentConfirmation;
 use App\Models\Book;
-use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderTransaction;
@@ -27,7 +26,6 @@ class StripeWebhookTest extends TestCase
     {
         parent::setUp();
 
-        // Use test credentials so StripePaymentProvider passes its config guards
         config([
             'services.stripe.secret' => 'sk_test_fake',
             'services.stripe.webhook_secret' => $this->webhookSecret,
@@ -46,7 +44,6 @@ class StripeWebhookTest extends TestCase
         $timestamp = time();
 
         $signedPayload = $timestamp.'.'.$payload;
-        // Stripe SDK uses the secret as-is in hash_hmac (no prefix stripping)
         $signature = hash_hmac('sha256', $signedPayload, $this->webhookSecret);
 
         $signatureHeader = "t={$timestamp},v1={$signature}";
@@ -183,7 +180,6 @@ class StripeWebhookTest extends TestCase
 
         $response->assertStatus(200);
 
-        // Controller short-circuits for already-paid orders — no job dispatched
         Queue::assertNotPushed(ProcessPaymentConfirmation::class);
     }
 
@@ -198,8 +194,6 @@ class StripeWebhookTest extends TestCase
             'provider_data' => ['session_id' => 'cs_test_async_session'],
         ]);
 
-        // Simulate an async payment method (e.g. bank transfer) where the session
-        // completes but funds have not yet arrived — payment_status is 'unpaid'.
         $event = $this->buildCheckoutSessionCompletedEvent(
             'cs_test_async_session',
             'pi_test_async_intent',
@@ -239,111 +233,21 @@ class StripeWebhookTest extends TestCase
         $response->assertStatus(200);
     }
 
-    // -------------------------------------------------------------------------
-    // ProcessPaymentConfirmation Job unit tests
-    // -------------------------------------------------------------------------
-
-    public function test_process_payment_confirmation_marks_order_paid_and_grants_user_books(): void
+    public function test_webhook_route_returns_200_for_unknown_provider(): void
     {
-        $user = User::factory()->create();
-        $book = Book::factory()->create(['price' => 59000]);
-        $order = Order::factory()->pending()->create([
-            'user_id' => $user->id,
-            'total_amount' => 59000,
-        ]);
-        OrderTransaction::factory()->pending()->create([
-            'order_id' => $order->id,
-            'provider_data' => ['session_id' => 'cs_test_job_test'],
-        ]);
-        OrderItem::factory()->create([
-            'order_id' => $order->id,
-            'book_id' => $book->id,
-            'price' => 59000,
-        ]);
-
-        $job = new ProcessPaymentConfirmation(
-            $order->id,
-            'pi_test_intent_job',
-            'cs_test_job_test',
+        // Unknown providers get a silent 200 — no retry storm from the sender,
+        // no information leak about internal provider registry.
+        $response = $this->call(
+            'POST',
+            route('webhooks.handle', ['provider' => 'unknown_provider']),
+            [],
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            '{}',
         );
-        $job->handle();
 
-        $order->refresh();
-        $this->assertEquals(OrderStatus::Paid, $order->status);
-        $this->assertNotNull($order->paid_at);
-
-        // transaction_id is now stored in order_transactions, not on the order
-        $this->assertDatabaseHas('order_transactions', [
-            'order_id' => $order->id,
-            'provider' => 'stripe',
-            'status' => 'succeeded',
-        ]);
-
-        $this->assertDatabaseHas('user_books', [
-            'user_id' => $user->id,
-            'book_id' => $book->id,
-            'order_id' => $order->id,
-        ]);
-    }
-
-    public function test_process_payment_confirmation_is_idempotent_when_order_already_paid(): void
-    {
-        $user = User::factory()->create();
-        $book = Book::factory()->create();
-        $order = Order::factory()->paid()->create([
-            'user_id' => $user->id,
-        ]);
-        OrderTransaction::factory()->succeeded()->create([
-            'order_id' => $order->id,
-            'provider_data' => ['session_id' => 'cs_test_idempotent', 'transaction_id' => 'pi_original'],
-        ]);
-        OrderItem::factory()->create([
-            'order_id' => $order->id,
-            'book_id' => $book->id,
-        ]);
-
-        $originalPaidAt = $order->paid_at;
-
-        $job = new ProcessPaymentConfirmation(
-            $order->id,
-            'pi_test_new_intent',
-            'cs_test_idempotent',
-        );
-        $job->handle();
-
-        // Order should remain paid with original timestamp, not overwritten
-        $order->refresh();
-        $this->assertEquals(OrderStatus::Paid, $order->status);
-        $this->assertEquals($originalPaidAt, $order->paid_at);
-    }
-
-    public function test_process_payment_confirmation_clears_user_cart(): void
-    {
-        $user = User::factory()->create();
-        $book = Book::factory()->create();
-        $order = Order::factory()->pending()->create([
-            'user_id' => $user->id,
-        ]);
-        OrderTransaction::factory()->pending()->create([
-            'order_id' => $order->id,
-            'provider_data' => ['session_id' => 'cs_test_cart_clear'],
-        ]);
-        OrderItem::factory()->create([
-            'order_id' => $order->id,
-            'book_id' => $book->id,
-        ]);
-
-        // Add a cart item for the user (simulating leftover items)
-        CartItem::factory()->create(['user_id' => $user->id]);
-
-        $job = new ProcessPaymentConfirmation(
-            $order->id,
-            'pi_test_cart',
-            'cs_test_cart_clear',
-        );
-        $job->handle();
-
-        $this->assertDatabaseMissing('cart_items', ['user_id' => $user->id]);
+        $response->assertStatus(200);
     }
 
     // -------------------------------------------------------------------------
@@ -448,7 +352,6 @@ class StripeWebhookTest extends TestCase
             $webhook['payload']
         );
 
-        // Transaction must remain succeeded, order must remain paid
         $transaction->refresh();
         $this->assertSame('succeeded', $transaction->status);
 

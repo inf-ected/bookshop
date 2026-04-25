@@ -60,6 +60,34 @@ class CabinetControllerTest extends TestCase
         $response->assertSee(route('books.download', [$book, 'format' => 'epub']), false);
     }
 
+    public function test_library_shows_download_button_for_ready_fb2(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+        UserBook::factory()->create(['user_id' => $user->id, 'book_id' => $book->id]);
+        BookFile::factory()->fb2()->ready()->create(['book_id' => $book->id]);
+
+        $response = $this->actingAs($user)->get(route('cabinet.library'));
+
+        $response->assertOk();
+        $response->assertSee(route('books.download', [$book, 'format' => 'fb2']), false);
+    }
+
+    public function test_library_shows_both_format_buttons_when_epub_and_fb2_ready(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+        UserBook::factory()->create(['user_id' => $user->id, 'book_id' => $book->id]);
+        BookFile::factory()->epub()->ready()->create(['book_id' => $book->id]);
+        BookFile::factory()->fb2()->ready()->create(['book_id' => $book->id]);
+
+        $response = $this->actingAs($user)->get(route('cabinet.library'));
+
+        $response->assertOk();
+        $response->assertSee(route('books.download', [$book, 'format' => 'epub']), false);
+        $response->assertSee(route('books.download', [$book, 'format' => 'fb2']), false);
+    }
+
     public function test_library_shows_preparing_message_when_no_ready_files(): void
     {
         $user = User::factory()->create();

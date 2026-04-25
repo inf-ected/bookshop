@@ -73,6 +73,36 @@ class BookControllerTest extends TestCase
         $response->assertSee(route('books.download', [$book, 'format' => 'epub']), false);
     }
 
+    public function test_book_detail_shows_fb2_download_button_for_owner_with_ready_fb2(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->published()->create();
+        UserBook::factory()->create(['user_id' => $user->id, 'book_id' => $book->id]);
+        BookFile::factory()->fb2()->ready()->create(['book_id' => $book->id]);
+
+        $response = $this->actingAs($user)->get(route('books.show', $book));
+
+        $response->assertOk();
+        $this->assertCount(1, $response->viewData('readyClientFiles'));
+        $response->assertSee(route('books.download', [$book, 'format' => 'fb2']), false);
+    }
+
+    public function test_book_detail_shows_all_format_buttons_when_epub_and_fb2_ready(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->published()->create();
+        UserBook::factory()->create(['user_id' => $user->id, 'book_id' => $book->id]);
+        BookFile::factory()->epub()->ready()->create(['book_id' => $book->id]);
+        BookFile::factory()->fb2()->ready()->create(['book_id' => $book->id]);
+
+        $response = $this->actingAs($user)->get(route('books.show', $book));
+
+        $response->assertOk();
+        $this->assertCount(2, $response->viewData('readyClientFiles'));
+        $response->assertSee(route('books.download', [$book, 'format' => 'epub']), false);
+        $response->assertSee(route('books.download', [$book, 'format' => 'fb2']), false);
+    }
+
     public function test_book_detail_shows_library_fallback_for_owner_with_no_ready_files(): void
     {
         $user = User::factory()->create();

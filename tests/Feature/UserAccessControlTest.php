@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Tests\TestCase;
 
-class Phase11DataLayerTest extends TestCase
+class UserAccessControlTest extends TestCase
 {
     use RefreshDatabase;
 

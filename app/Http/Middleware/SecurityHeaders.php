@@ -21,8 +21,8 @@ class SecurityHeaders
         $viteHttp = $isLocal ? ' http://localhost:5173' : '';
         $viteConnect = $isLocal ? ' http://localhost:5173 ws://localhost:5173' : '';
 
-        // Alpine.js uses new AsyncFunction() in Vite dev mode — requires unsafe-eval in local only.
-        $unsafeEval = $isLocal ? " 'unsafe-eval'" : '';
+        // Alpine.js v3 evaluates x-data/x-on expressions via new Function() — requires unsafe-eval in all envs.
+        $unsafeEval = " 'unsafe-eval'";
 
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('X-Content-Type-Options', 'nosniff');

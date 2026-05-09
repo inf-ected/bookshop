@@ -16,13 +16,14 @@ class SecurityHeaders
 
         $s3PublicOrigin = $this->extractOrigin(config('filesystems.disks.s3-public.url') ?? '');
 
+        // Used only to add Vite dev-server origins (script/style/font/connect-src).
         $isLocal = app()->isLocal();
-        // HTTP origin for script/style/font directives; WebSocket added separately for connect-src.
         $viteHttp = $isLocal ? ' http://localhost:5173' : '';
         $viteConnect = $isLocal ? ' http://localhost:5173 ws://localhost:5173' : '';
 
-        // Alpine.js uses new AsyncFunction() in Vite dev mode — requires unsafe-eval in local only.
-        $unsafeEval = $isLocal ? " 'unsafe-eval'" : '';
+        // Alpine.js v3 evaluates x-data/x-on expressions via new AsyncFunction() / new Function() in all
+        // environments — not only in Vite dev mode. unsafe-eval must always be present.
+        $unsafeEval = " 'unsafe-eval'";
 
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('X-Content-Type-Options', 'nosniff');

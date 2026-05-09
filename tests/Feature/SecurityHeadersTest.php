@@ -47,6 +47,7 @@ class SecurityHeadersTest extends TestCase
         $this->assertStringContainsString('https://www.googletagmanager.com', $csp);
         $this->assertStringContainsString('https://fonts.bunny.net', $csp);
         $this->assertStringContainsString("frame-ancestors 'none'", $csp);
+        $this->assertStringContainsString("'unsafe-eval'", $csp);
     }
 
     // -------------------------------------------------------------------------
